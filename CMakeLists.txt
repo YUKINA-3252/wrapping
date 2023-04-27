@@ -8,11 +8,31 @@ project(wrapping)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  jsk_recognition_utils
+  dynamic_reconfigure pcl_ros nodelet message_generation genmsg
+  ${PCL_MSGS} sensor_msgs geometry_msgs jsk_recognition_msgs
+  eigen_conversions tf_conversions tf2_ros tf
+  image_transport nodelet cv_bridge
+  jsk_topic_tools
+  image_geometry
+  jsk_footstep_msgs
+  interactive_markers
+  laser_assembler
+  octomap_server
+  octomap_ros
+  octomap_msgs
+  kdl_parser
+  kdl_conversions
   roscpp
   rospy
   std_msgs
   message_generation
-)
+  )
+find_package(PkgConfig)
+
+generate_dynamic_reconfigure_options(
+  cfg/PointCloudToPCD.cfg
+  )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -115,10 +135,7 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
-)
+include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -205,10 +222,10 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(point_cloud_to_pcd_server src/point_cloud_to_server.cpp)
+add_executable(point_cloud_to_pcd_server src/point_cloud_to_pcd_server.cpp)
 target_link_libraries(point_cloud_to_pcd_server ${catkin_LIBRARIES})
 add_dependencies(point_cloud_to_pcd_server wrapping_gencpp)
 
-add_executable(point_cloud_to_pcd_client src/point_cloud_to_client.cpp)
+add_executable(point_cloud_to_pcd_client src/point_cloud_to_pcd_client.cpp)
 target_link_libraries(point_cloud_to_pcd_client ${catkin_LIBRARIES})
 add_dependencies(point_cloud_to_pcd_client wrapping_gencpp)
