@@ -1,0 +1,16 @@
+<launch>
+  <arg name="camera_ns" default="realsense_torso" />
+  <arg name="manager" value="/$(arg camera_ns)/$(arg camera_ns)_camera_manager" />
+  <arg name="INPUT" value="/plane_extraction/output" />
+
+  <node name="pointcloud_to_pcd" type="nodelet" pkg="nodelet"
+        args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" >
+    <remap from="~input" to="$(arg INPUT)" />
+    <rosparam subst_value="true">
+      prefix: $(find jsk_pcl_ros_utils)/save_pcd
+      duration: 1.0
+      binary: true
+      compressed: true
+    </rosparam>
+  </node>
+</launch>

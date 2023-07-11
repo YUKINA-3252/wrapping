@@ -1,0 +1,5 @@
+frame_id: LARM_JOINT5_Link
+initial_x: 0.0
+initial_y: 0.0
+initial_z: 0.0
+initial_orientation: [0.0, 0.0, 0.0, 1.0]
