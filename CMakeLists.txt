@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  catkin_virtualenv
   )
 
 ## System dependencies are found with CMake's conventions
@@ -100,12 +101,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-# catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES wrapping
-#  CATKIN_DEPENDS roscpp rospy std_msgs
-#  DEPENDS system_lib
-#)
+catkin_package()
 
 ###########
 ## Build ##
@@ -148,6 +144,11 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
+catkin_generate_virtualenv(
+  PYTHON_INTERPRETER python3.8
+  CHECK_VENV FALSE
+)
+
 #############
 ## Install ##
 #############
@@ -157,10 +158,11 @@ include_directories(
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# catkin_install_python(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+file(GLOB PYTHON_FILES src/*.py)
+catkin_install_python(
+  PROGRAMS ${PYTHON_FILES}
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
@@ -184,11 +186,10 @@ include_directories(
 # )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(FILES
+  requirements.txt
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 #############
 ## Testing ##
