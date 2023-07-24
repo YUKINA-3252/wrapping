@@ -1,3 +1,3 @@
-import chainer
+import numpy
 
-print(chainer.__version__)
+print(numpy.__version__)

@@ -1,1 +1,7 @@
 chainer==6.7.0
+numpy==1.16.6
+pyyaml
+scikit-learn
+scikit-image
+opencv-python==4.2.0.32
+rospkg

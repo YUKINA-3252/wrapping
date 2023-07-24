@@ -1,18 +1,19 @@
 <launch>
+  <arg name="camera_ns" default="" />
+  <arg name="camera_type" default="" />
+  <arg name="color" default="" />
   <arg name="launch_transformable_server" default="true" />
   <arg name="launch_tabletop_detector" default="false" />
   <arg name="launch_grasp_mask_rcnn" default="false" />
-  <arg name="camera_ns" default="realsense" />
-  <arg name="camera_type" default="d435" />
-  <arg name="CLOUD" default="/$(arg camera_ns)_$(arg camera_type)_remote/depth_registered/points" />
+  <arg name="CLOUD" default="/$(arg camera_ns)_remote/depth_registered/points" />
 
-  <arg name="camera_frame_id" default="$(arg camera_ns)_color_optical_frame" />
+  <arg name="camera_frame_id" default="$(arg camera_ns)_$(arg color)_optical_frame" />
   <arg name="manager" default="remote_manager" />
-  <arg name="input_cloud" default="/$(arg camera_ns)_$(arg camera_type)_remote/depth_registered/quarter/points" />
-  <arg name="input_image" default="/$(arg camera_ns)_$(arg camera_type)_remote/depth_registered/quarter/image" />
+  <arg name="input_cloud" default="/$(arg camera_ns)_remote/depth_registered/quarter/points" />
+  <arg name="input_image" default="/$(arg camera_ns)_remote/depth_registered/quarter/image" />
 
   <!-- interactive marker -->
-  <node name="transformable_interactive_server"
+  <node name="transformable_interactive_server_$(arg camera_ns)"
         pkg="jsk_interactive_marker" type="transformable_server_sample"
         if="$(arg launch_transformable_server)" >
     <rosparam subst_value="true">
@@ -21,10 +22,10 @@
     </rosparam>
   </node>
 
-  <!-- tf for realsense at baxter's torso -->
-  <node name="marker_6dof_tf_base_to_color"
+  <!-- tf -->
+  <node name="marker_6dof_tf_base_to_color_$(arg camera_ns)"
         pkg="jsk_interactive_marker" type="marker_6dof">
-    <rosparam command="load" file="$(find wrapping)/config/hiro/$(arg camera_type).yaml" />
+    <rosparam command="load" file="$(find wrapping_melodic)/config/hiro/$(arg camera_type).yaml" />
     <rosparam subst_value="true" >
       object_type: cube
       publish_tf: true
@@ -35,7 +36,7 @@
     </rosparam>
   </node>
 
-  <node name="realsense_resize_points_publisher"
+  <node name="realsense_resize_points_publisher_$(arg camera_ns)"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/ResizePointsPublisher $(arg manager)">
     <remap from="~input" to="$(arg CLOUD)" />
@@ -46,11 +47,14 @@
     </rosparam>
   </node>
 
-  <node name="pointcloud_to_image" pkg="pcl_ros" type="convert_pointcloud_to_image"
+  <node name="pointcloud_to_image_$(arg camera_ns)" pkg="pcl_ros" type="convert_pointcloud_to_image"
         args="input:=$(arg input_cloud) output:=$(arg input_image)" />
 
-  <include file="$(find wrapping)/launch/hiro/hiro_tabletop_object_detector.launch"
+  <include file="$(find wrapping_melodic)/launch/hiro/hiro_tabletop_object_detector.launch"
            if="$(arg launch_tabletop_detector)">
+    <arg name="camera_ns" value="$(arg camera_ns)" />
+    <arg name="camera_type" value="$(arg camera_type)" />
+    <arg name="color" value="$(arg color)" />
     <arg name="input_image" value="$(arg input_image)" />
     <arg name="input_cloud" value="$(arg input_cloud)" />
     <arg name="manager" value="$(arg manager)" />

@@ -25,7 +25,7 @@
   (send *hironxjsk* :stop-grasp)
   (send *hironxjsk* :head :look-at
         (send (send (send *hironxjsk* :torso :end-coords :copy-worldcoords)
-                    :translate #f(600 0 0)) :worldpos))
+                    :translate #f(1000 0 0)) :worldpos))
   (send *irtviewer* :draw-objects)
   (send *ri* :angle-vector (send *hironxjsk* :angle-vector) 5000)
   (send *ri* :wait-interpolation)
@@ -38,6 +38,7 @@
   (send *hironxjsk* :angle-vector (send *ri* :state :potentio-vector)))
 
 ;; Front angle
+(setq left-hand-pos (send *hironxjsk* :larm :end-coords :copy-worldcoords))
 (send left-hand-pos :rotate (deg2rad 30) :y)
 (send *hironxjsk* :larm :inverse-kinematics (send left-hand-pos :copy-worldcoords) :rotation-axis t)
 ;; (send left-hand-pos :translate #f(-50 0 50) :world)
