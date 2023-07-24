@@ -1,0 +1,22 @@
+import numpy as np
+import open3d as o3d
+
+if __name__ == "__main__":
+    print("Load a ply point cloud, print it, and render it")
+    pcd = o3d.io.read_point_cloud("../save_pcd/sample_pcd_1685331755843849.pcd")
+    pcd.remove_non_finite_points()
+    print(pcd)
+    print(np.asarray(pcd.points))
+    o3d.visualization.draw_geometries([pcd])
+
+
+    # # Estimation of normal vector of points
+    # pcd.estimate_normals(
+    #     search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=10.0, max_nn=100))
+
+    # # Checking normal vectors
+    # print(np.asarray(pcd.normals))
+    # print(np.asarray(pcd.normals[0]))
+
+    # # Visualization
+    # o3d.visualization.draw_geometries([pcd], point_show_normal=True)
