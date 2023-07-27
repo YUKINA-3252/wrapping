@@ -58,13 +58,13 @@
   <!-- Launching a remote launch -->
   <arg name="launch_tabletop_detector" default="true" />
 
-  <!-- <include file="$(find wrapping_melodic)/launch/hiro/hiro_remote.launch"> -->
-  <!--   <arg name="camera_ns" default="realsense" /> -->
-  <!--   <arg name="camera_type" default="d435" /> -->
-  <!--   <arg name="color" default="color" /> -->
-  <!--   <arg name="launch_grasp_mask_rcnn" default="false" /> -->
-  <!--   <arg name="launch_tabletop_detector" value="$(arg launch_tabletop_detector)" /> -->
-  <!-- </include> -->
+  <include file="$(find wrapping_melodic)/launch/hiro/hiro_remote.launch">
+    <arg name="camera_ns" default="realsense" />
+    <arg name="camera_type" default="d435" />
+    <arg name="color" default="color" />
+    <arg name="launch_grasp_mask_rcnn" default="false" />
+    <arg name="launch_tabletop_detector" value="$(arg launch_tabletop_detector)" />
+  </include>
 
   <include file="$(find wrapping_melodic)/launch/hiro/hiro_remote.launch">
     <arg name="camera_ns" value="head_camera" />

@@ -9,7 +9,7 @@ Panels:
         - /TF1/Frames1
         - /PointCloud22
         - /PointCloud23
-        - /BoundingBoxArray5
+        - /PolygonArray1
       Splitter Ratio: 0.5
     Tree Height: 1100
   - Class: rviz/Selection
@@ -496,6 +496,8 @@ Visualization Manager:
           Value: false
         rhsensor:
           Value: false
+        workspace:
+          Value: true
       Marker Scale: 0.30000001192092896
       Name: TF
       Show Arrows: true
@@ -526,8 +528,6 @@ Visualization Manager:
                     {}
                   respeaker_base:
                     {}
-                realsense_color_optical_frame:
-                  {}
               LARM_JOINT0_Link:
                 LARM_JOINT1_Link:
                   LARM_JOINT2_Link:
@@ -543,6 +543,8 @@ Visualization Manager:
                           larm_end_coords:
                             {}
                           lhsensor:
+                            {}
+                          realsense_color_optical_frame:
                             {}
               RARM_JOINT0_Link:
                 RARM_JOINT1_Link:
@@ -560,6 +562,8 @@ Visualization Manager:
                             {}
                           rhsensor:
                             {}
+            workspace:
+              {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -593,7 +597,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /head_camera_remote/depth_registered/points
+      Topic: /bbox_cloud_extract_head/output
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -627,17 +631,30 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: jsk_rviz_plugin/BoundingBoxArray
-      Enabled: true
+      Enabled: false
       Name: BoundingBoxArray
       Topic: /bbox_attention_clipper_d435/output/box_array
       Unreliable: false
-      Value: true
+      Value: false
       alpha: 0.800000011920929
       color: 25; 255; 0
       coloring: Auto
       line width: 0.004999999888241291
       only edge: false
       show coords: false
+    - Alpha: 1
+      Class: jsk_rviz_plugin/PolygonArray
+      Color: 25; 255; 0
+      Enabled: true
+      Name: PolygonArray
+      Topic: /multi_plane_estimate_head/output_nonconnected_polygon
+      Unreliable: false
+      Value: true
+      coloring: Auto
+      enable lighting: true
+      normal length: 0.10000000149011612
+      only border: true
+      show normal: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -681,10 +698,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.2197963297367096
+      Pitch: 0.08979629725217819
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.7267805337905884
+      Yaw: 1.6767834424972534
     Saved: ~
 Window Geometry:
   Camera:
@@ -707,4 +724,4 @@ Window Geometry:
     collapsed: false
   Width: 2493
   X: 67
-  Y: 27
+  Y: 316

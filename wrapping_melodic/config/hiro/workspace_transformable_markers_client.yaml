@@ -1,9 +1,9 @@
 boxes:
 - dimensions:
-  - 0.5
+  - 1.0
   - 1.5
   - 0.5
-  frame_id: LARM_JOINT5_Link
+  frame_id: WAIST
   name: workspace
   orientation:
   - 0.0
