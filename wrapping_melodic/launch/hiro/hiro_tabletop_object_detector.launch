@@ -10,7 +10,6 @@
   <arg name="launch_transformable_server" default="true" />
   <arg name="clip" default="true" />
 
-  <arg name="CLOUD" value="bbox_cloud_extract/output/$(arg camera_type)" if="$(arg clip)" />
   <arg name="CLOUD" value="$(arg input_cloud)" unless="$(arg clip)" />
 
   <node name="transformable_interactive_server_$(arg camera_type)"

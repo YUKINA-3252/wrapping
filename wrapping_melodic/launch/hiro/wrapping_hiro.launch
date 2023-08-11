@@ -62,7 +62,6 @@
     <arg name="camera_ns" default="realsense" />
     <arg name="camera_type" default="d435" />
     <arg name="color" default="color" />
-    <arg name="launch_grasp_mask_rcnn" default="false" />
     <arg name="launch_tabletop_detector" value="$(arg launch_tabletop_detector)" />
   </include>
 
@@ -70,13 +69,22 @@
     <arg name="camera_ns" value="head_camera" />
     <arg name="camera_type" value="head" />
     <arg name="color" value="rgb" />
-    <arg name="launch_grasp_mask_rcnn" default="false" />
     <arg name="launch_tabletop_detector" value="$(arg launch_tabletop_detector)" />
   </include>
 
-  <!-- <arg name="INPUT" value="/plane_extraction/output" /> -->
-  <arg name="INPUT" value="/realsense_remote/depth_registered/points" />
-  <node name="sample_pointcloud_to_pcd" type="nodelet" pkg="nodelet"
+  <!-- Launching a handcamera plane extract launch -->
+  <include file="$(find wrapping_melodic)/launch/hiro/handcamera_plane_extract.launch">
+    <arg name="camera_ns_head" default="head_camera" />
+    <arg name="camera_ns_hand" default="realsense" />
+    <arg name="camera_type_head" default="head" />
+    <arg name="camera_type_hand" default="d435" />
+    <arg name="color_head" default="rgb" />
+    <arg name="color_hand" default="color" />
+    <arg name="manager" value="$(arg manager)" />
+  </include>
+
+  <arg name="INPUT" value="/bbox_cloud_extract_d435/output" />
+  <node name="pointcloud_to_pcd" type="nodelet" pkg="nodelet"
         args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" >
     <remap from="~input" to="$(arg INPUT)" />
     <rosparam subst_value="true">
