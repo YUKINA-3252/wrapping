@@ -61,6 +61,9 @@
 (defun ri2ir ()
   (send *hironxjsk* :angle-vector (send *ri* :state :potentio-vector)))
 
+(defun solve-ik (target-coords)
+  (send *hironxjsk* :larm :inverse-kinematics (send target-coords :copy-worldcoords) :rotation-axis t))
+
 (defun solve-ik-face (num)
   (setq *target-coords* (send (send (elt surface-location num) :copy-worldcoords) :translate (list2f (scale-vector (f2list (elt surface-normal-vector num)) 200)) :world))
   (if (or (eq num 2) (eq num 3))
@@ -72,6 +75,45 @@
 (reset-pose)
 (open-lhand)
 (detect)
-(solve-ik-face 1)
-(ir2ri)
-(solve-ik-face 3)
+
+(setq varlist (list (list 0 2 '+) (list 0 3 '-) (list 1 2 '-) (list 1 3 '+)))
+(setq corner-coords (list))
+(dotimes (x 4)
+  (setq *target-coords* (send (send (elt surface-location (elt (elt varlist x) 0)) :copy-worldcoords) :translate
+                              (list2f (scale-vector (f2list (elt surface-normal-vector (elt (elt varlist x) 1))) (/ (y-of-cube *target-bbox*) 2))) :world))
+  (send *target-coords* :rotate (funcall (elt (elt varlist x) 2) pi (atan (/ (sqrt (+ (expt (x-of-cube *target-bbox*) 2) (expt (y-of-cube *target-bbox*) 2))) (y-of-cube *target-bbox*)))) :z)
+  (send (send (send *target-coords* :rotate pi :x) :translate #f(-200 0 100) :local) :rotate (deg2rad 30) :y)
+  (setq corner-coords (append corner-coords (list *target-coords*))))
+
+(defun solve-ik-sphere (deg)
+  (setq *target-coords* (send (send (send (send (send (make-coords) :locate (send (send *target-bbox* :copy-worldcoords) :pos) :world)
+                                          :translate (float-vector (* -1 (* (cos (deg2rad deg)) (+ (x-of-cube *target-bbox*) 100))) (* (sin (deg2rad deg)) (+ (x-of-cube *target-bbox*) 100)) 0) :world) :rotate (* -1 (deg2rad deg)) :z)
+                                    :translate #f(0 0 100) :world) :rotate (deg2rad 30) :y))
+  (solve-ik *target-coords*)
+  )
+
+
+(setq xml-data "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<deg
+</root>" deg (send *hironxjsk* :larm :end-cords :copy-worldcoords ))
+(setq file-path "/p")
+(with-open-file (out-stream file-path :direction :output
+                                      :if-exists :supersede
+                                      :if-does-not-exist :create)
+                (format out-stream "~A" xml-data))
+
+(defun write-xml-to-file-with-variables (sdeg file-path)
+  (setq xml-data (format nil "<deg>~A</deg>" sdeg))
+
+  (with-open-file (out-stream file-path :direction :output
+                                      :if-exists :supersede
+                                      :if-does-not-exist :create)
+    (format out-stream "~A" xml-data)))
+
+(setq sdeg 30)
+(write-xml-to-file-with-variables sdeg "xml_file/end_coords.xml")
+
+(setq *target-coords-arrow* (arrow))
+(send *target-coords-arrow* :newcoords (send *target-coords* :copy-worldcoords))
+(setq object-list (append object-list *target-coords-arrow*))
+(objects object-list)

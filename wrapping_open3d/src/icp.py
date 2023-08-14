@@ -32,41 +32,34 @@ def calc_cog(pcd):
     return cog
 
 if __name__ == "__main__":
-    source = o3d.io.read_point_cloud("../save_pcd/sample_pcd_1683866827277444.pcd")
-    target = o3d.io.read_point_cloud("../save_pcd/sample_pcd_1683866846091469.pcd")
+
+    pcd1 = o3d.io.read_point_cloud("../save_pcd/sample_pcd_1691894406531966.pcd")
+    source = o3d.io.read_point_cloud("../save_pcd/sample_pcd_1691905282011343.pcd")
+    target = o3d.io.read_point_cloud("../save_pcd/sample_pcd_1691905369039818.pcd")
+    pcd1.remove_non_finite_points()
     source.remove_non_finite_points()
     target.remove_non_finite_points()
-    threshold = 0.02
-    quaternion = np.array([-0.679, 0.685, -0.153, 0.213])
-    translationMatrix = np.array([0.253, -0.004, 0.563])
-    P_2 = quaternion_to_rotationMatrix(quaternion, translationMatrix)
-    P_2 = np.array([[1.0, 0.0, 0.0, 0.0],
-                    [0.0, 1.0, 0.0, 0.0],
-                    [0.0, 0.0, 1.0, 0.0],
-                    [0.0, 0.0, 0.0, 1.0]])
-    cog = calc_cog(source)
-    cog_t = P_2 @ cog
-    P_1 = np.asarray([[1.0, 0.0, 0.0, -1.0 * cog_t[0]],
-                    [0.0, 1.0, 0.0, -1.0 * cog_t[1]],
-                    [0.0, 0.0, 1.0, -1.0 * cog_t[2]],
-                    [0.0, 0.0, 0.0, 1.0]])
-    print(P_1)
-    R = np.asarray([[np.sqrt(2)/2.0, np.sqrt(2)/-2.0, 0.0, 0.0],
-                    [np.sqrt(2)/2.0, np.sqrt(2)/2.0, 0.0, 0.0],
-                    [0.0, 0.0, 1.0, 0.0],
-                    [0.0, 0.0, 0.0, 1.0]])
-    trans_init = P_2 @ P_1 @ R @ np.linalg.inv(P_1) @ np.linalg.inv(P_2)
-    draw_registration_result(source, target, trans_init)
-    print("Initial alignment")
-    evaluation = o3d.pipelines.registration.evaluate_registration(
-        source, target, threshold, trans_init)
-    print(evaluation)
-
-    print("Apply point-to-point ICP")
-    reg_p2p = o3d.pipelines.registration.registration_icp(
-        source, target, threshold, trans_init,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint())
-    print(reg_p2p)
-    print("Transformation is :")
-    print(reg_p2p.transformation)
-    draw_registration_result(source, target, reg_p2p.transformation)
+    o3d.visualization.draw_geometries([source, target])
+    p1 = np.asarray([359.518, 229.482, 75.9747]) * 0.001
+    R1 = np.asarray([[0.75, 0.5, 0.43],
+                     [-0.43, 0.866, -0.25],
+                     [-0.50, -7.866e-08, 0.866]])
+    trans1 = np.eye(4)
+    trans1[:3, :3] = R1
+    trans1[:3, 3] = p1
+    trans1 = trans1 @ quaternion_to_rotationMatrix(np.array([0.5, -0.5, 0.5, 0.5]), np.array([0.0, 0.0, 0.0]))
+    p2 = np.asarray([477.694, 347.966, 76.121]) * 0.001
+    R2 = np.asarray([[0.433, 0.866, 0.25],
+                     [-0.75, 0.50, -0.43],
+                     [-0.50, 3.2e-05, 0.866]])
+    trans2 = np.eye(4)
+    trans2[:3, :3] = R2
+    trans2[:3, 3] = p2
+    trans2 = trans2 @ quaternion_to_rotationMatrix(np.array([0.5, -0.5, 0.5, 0.5]), np.array([0.0, 0.0, 0.0]))
+    source_cp = copy.deepcopy(source)
+    target_cp = copy.deepcopy(target)
+    source_cp.transform(trans1)
+    target_cp.transform(trans2)
+    o3d.visualization.draw_geometries([source_cp, target_cp])
+    # mesh = o3d.geometry.TriangleMesh.create_coordinate_frame()
+    # o3d.visualization.draw_geometries([target_cp, mesh])
