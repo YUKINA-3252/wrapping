@@ -1,6 +1,7 @@
 (load "models/arrow-object.l")
 (load "package://hrpsys_ros_bridge_tutorials/euslisp/hironxjsk-interface.l")
 (load "package://wrapping_melodic/euslisp/detect.l")
+(load "xmls")
 (ros::load-ros-package "jsk_recognition_msgs")
 
 (hironxjsk-init)
@@ -71,6 +72,22 @@
   (send *target-coords* :rotate pi :y)
   (send (send *target-coords* :translate #f(0 0 100) :world) :rotate (deg2rad 30) :y)
   (send *hironxjsk* :larm :inverse-kinematics (send *target-coords* :copy-worldcoords) :rotation-axis t))
+(defun solve-ik-sphere (deg)
+  (setq *target-coords* (send (send (send (send (send (make-coords) :locate (send (send *target-bbox* :copy-worldcoords) :pos) :world)
+                                          :translate (float-vector (* -1 (* (cos (deg2rad deg)) (+ (x-of-cube *target-bbox*) 100))) (* (sin (deg2rad deg)) (+ (x-of-cube *target-bbox*) 100)) 0) :world) :rotate (* -1 (deg2rad deg)) :z)
+                                    :translate #f(0 0 100) :world) :rotate (deg2rad 30) :y))
+  (solve-ik *target-coords*)
+  )
+
+(defun write-txt (new-info file-path)
+  (with-open-file (file file-path :direction :output :if-exists :append :if-does-not-exists :create)
+                  (format file "~A~%" new-info)))
+
+(defun write-txt-and-solve-ik-sphere (deg file-path)
+  (solve-ik-sphere deg)
+  (write-txt deg file-path)
+  (write-txt (send (send *hironxjsk* :larm :end-coords :copy-worldcoords) :pos) file-path)
+  (write-txt (send (send *hironxjsk* :larm :end-coords :copy-worldcoords) :rot) file-path))
 
 (reset-pose)
 (open-lhand)
@@ -85,33 +102,10 @@
   (send (send (send *target-coords* :rotate pi :x) :translate #f(-200 0 100) :local) :rotate (deg2rad 30) :y)
   (setq corner-coords (append corner-coords (list *target-coords*))))
 
-(defun solve-ik-sphere (deg)
-  (setq *target-coords* (send (send (send (send (send (make-coords) :locate (send (send *target-bbox* :copy-worldcoords) :pos) :world)
-                                          :translate (float-vector (* -1 (* (cos (deg2rad deg)) (+ (x-of-cube *target-bbox*) 100))) (* (sin (deg2rad deg)) (+ (x-of-cube *target-bbox*) 100)) 0) :world) :rotate (* -1 (deg2rad deg)) :z)
-                                    :translate #f(0 0 100) :world) :rotate (deg2rad 30) :y))
-  (solve-ik *target-coords*)
-  )
-
-
-(setq xml-data "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<deg
-</root>" deg (send *hironxjsk* :larm :end-cords :copy-worldcoords ))
-(setq file-path "/p")
-(with-open-file (out-stream file-path :direction :output
-                                      :if-exists :supersede
-                                      :if-does-not-exist :create)
-                (format out-stream "~A" xml-data))
-
-(defun write-xml-to-file-with-variables (sdeg file-path)
-  (setq xml-data (format nil "<deg>~A</deg>" sdeg))
-
-  (with-open-file (out-stream file-path :direction :output
-                                      :if-exists :supersede
-                                      :if-does-not-exist :create)
-    (format out-stream "~A" xml-data)))
-
-(setq sdeg 30)
-(write-xml-to-file-with-variables sdeg "xml_file/end_coords.xml")
+(write-txt-and-solve-ik-sphere 0 "txt_file/end_coords.txt")
+(solve-ik-sphere 0)
+(setq sdeg 0)
+(write-xml-to-file-with-variables sdeg (send (send *hironxjsk* :larm :end-coords :copy-worldcoords) :pos) (send (send *hironxjsk* :larm :end-coords :copy-worldcoords) :rot) "xml_file/end_coords.xml")
 
 (setq *target-coords-arrow* (arrow))
 (send *target-coords-arrow* :newcoords (send *target-coords* :copy-worldcoords))
