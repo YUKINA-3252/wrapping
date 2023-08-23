@@ -1,10 +1,14 @@
-import copy
-import glob
-import sys
+import math
 import numpy as np
 import open3d as o3d
 import os
-import re
+import pyransac3d as pyrsc
+
+def add_color_normal (pcd):
+    pcd.paint_uniform_color(np.random.rand(3))
+    size = np.abs((pcd.get_max_bound() - pcd.get_min_bound())).max() / 30
+    kdt_n = o3d.geometry.KDTreeSearchParamHybrid(radius=size, max_nn=50)
+    pcd.estimate_normals(kdt_n)
 
 def register (pcd1, pcd2, size):
     kdt_n = o3d.geometry.KDTreeSearchParamHybrid(radius=size, max_nn=50)
@@ -35,40 +39,6 @@ def register (pcd1, pcd2, size):
     result2 = o3d.pipelines.registration.registration_icp(pcd1, pcd2, size, result1.transformation, est_ptpln)
 
     return result2.transformation
-
-def merge(pcds):
-    all_points=[]
-    for pcd in pcds:
-        all_points.append(np.asarray(pcd.points))
-
-    merged_pcd = o3d.geometry.PointCloud()
-    merged_pcd.points = o3d.utility.Vector3dVector(np.vstack(all_points))
-
-    return merged_pcd
-
-def add_color_normal (pcd):
-    pcd.paint_uniform_color(np.random.rand(3))
-    size = np.abs((pcd.get_max_bound() - pcd.get_min_bound())).max() / 30
-    kdt_n = o3d.geometry.KDTreeSearchParamHybrid(radius=size, max_nn=50)
-    pcd.estimate_normals(kdt_n)
-
-def load_pcds_path(pcd_files):
-    pcds = []
-    for f in pcd_files:
-        pcd = o3d.io.read_point_cloud(f)
-        add_color_normal(pcd)
-        pcds.append(pcd)
-
-    return pcds
-
-def load_pcds(pcd_files):
-    pcds = []
-    for i in range(len(pcd_files)):
-        pcd = pcd_files[i]
-        add_color_normal(pcd)
-        pcds.append(pcd)
-
-    return pcds
 
 def align_pcds(pcds, size):
     pose_graph = o3d.pipelines.registration.PoseGraph()
@@ -102,6 +72,10 @@ def align_pcds(pcds, size):
 
     return pcds
 
+def normalize_vector (x):
+    c = np.linalg.norm(x)
+    return x / c
+
 def quaternion_to_rotationMatrix(quaternion, translationMatrix):
     q0 = quaternion[0]
     q1 = quaternion[1]
@@ -116,61 +90,62 @@ def quaternion_to_rotationMatrix(quaternion, translationMatrix):
                                  [0.0, 0.0, 0.0, 1.0]])
     return rotationMatrix
 
-def store_angle (file_path, line_num):
-    with open(file_path, "r") as file:
-        lines = file.readlines()
-        angle = float(lines[line_num].split()[0])
-    return angle
-def store_trans (file_path, line_num):
-    with open(file_path, "r") as file:
-        lines = file.readlines()
-
-        line = lines[line_num+1].split()
-        pos = np.asarray([float(value) for value in line]) * 0.001
-        line = lines[line_num+2].split()
-        R = np.asarray([float(value) for value in line])
-        R = np.reshape(R, (3, 3))
-        trans = np.eye(4)
-        trans[:3, :3] = R
-        trans[:3, 3] = pos
-        trans = trans @ quaternion_to_rotationMatrix(np.array([0.5, -0.5, 0.5, 0.5]), np.array([0.0, 0.0, 0.0]))
-
-    return trans
-
-def atoi (text):
-    return int(text) if text.isdigit() else text
-def natural_keys (text):
-    return [atoi(c) for c in re.split(r'(\d+)',text)]
-
 directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/202308211501"
-file = sorted(glob.glob("{}/*.pcd".format(directory_path)), key=natural_keys)
-pcds = load_pcds_path(file)
-for f in pcds:
-    f.remove_non_finite_points()
-
-angle_list = []
-for i in range(len(pcds)):
-    angle_list.append(store_angle("{}/end_coords.txt".format(directory_path), i*3))
-trans_list = []
-for i in range(len(pcds)):
-    trans_list.append(store_trans("{}/end_coords.txt".format(directory_path), i*3))
-
-pcds_cp = []
-for i, f in enumerate(pcds):
-    pcd_cp = copy.deepcopy(f)
-    pcd_cp.transform(trans_list[i])
-    pcds_cp.append(pcd_cp)
-
-pcds = load_pcds(pcds_cp)
-o3d.visualization.draw_geometries(pcds, "input pcds")
-
-size = np.abs((pcds[0].get_max_bound() - pcds[0].get_min_bound())).max() / 30
-pcds_0_to_60 = pcds[6:0:-1]
-pcds_0_to_minus60 = pcds[6:-1]
-pcd_aligned_0_to_60 = align_pcds(pcds_0_to_60, size)
-pcd_aligned_0_to_minus60 = align_pcds(pcds_0_to_minus60, size)
-# o3d.visualization.draw_geometries(pcd_aligned_0_to_minus60, "aligned")
-pcd_merge = merge(pcd_aligned_0_to_60 + pcd_aligned_0_to_minus60)
-o3d.io.write_point_cloud("{}/merge.pcd".format(directory_path), pcd_merge)
+pcd_merge = o3d.io.read_point_cloud("{}/merge.pcd".format(directory_path))
 add_color_normal(pcd_merge)
-o3d.visualization.draw_geometries([pcd_merge], "merged")
+pcds = [pcd_merge]
+o3d.visualization.draw_geometries(pcds, "merged")
+
+face_normal_vector_ans = np.asarray([1.0, 0.0, 0.0])
+
+if "face.pcd" in os.listdir(directory_path):
+    pass
+else:
+    inliers = []
+
+    plane_model_table, inliers_table = pcd_merge.segment_plane(distance_threshold=0.003, ransac_n=3, num_iterations=1000)
+    inlier_cloud_table = pcd_merge.select_by_index(inliers_table)
+    inlier_cloud_table.paint_uniform_color(np.random.rand(3))
+    inliers.append(inlier_cloud_table)
+    outlier_cloud_table = pcd_merge.select_by_index(inliers_table, invert = True)
+
+    outlier = outlier_cloud_table
+    while (True):
+        plane_model, inlier = outlier.segment_plane(distance_threshold=0.003, ransac_n=3, num_iterations=1000)
+        inlier_cloud = outlier.select_by_index(inlier)
+        inlier_cloud.paint_uniform_color(np.random.rand(3))
+        inliers.append(inlier_cloud)
+        outlier = outlier.select_by_index(inlier, invert = True)
+        face_normal_vector = normalize_vector(np.asarray([plane_model[0], plane_model[1], plane_model[2]]))
+        if (np.rad2deg(math.acos(np.dot(face_normal_vector_ans, face_normal_vector))) < 15 or np.rad2deg(math.acos(np.dot(face_normal_vector_ans * -1, face_normal_vector))) < 15):
+            break
+    o3d.visualization.draw_geometries(inliers + [outlier])
+
+    o3d.io.write_point_cloud("{}/face.pcd".format(directory_path), inliers[-1])
+
+face = o3d.io.read_point_cloud("{}/face.pcd".format(directory_path))
+
+model = o3d.geometry.PointCloud()
+length_x = 0.22
+length_z = 0.11
+thickness = 0.003
+points = np.asarray(face.points).shape[0]
+face_pos = np.asarray([480, 0, -20]) * 0.001
+
+X = ((length_x * length_z * thickness) / points) ** (1/3)
+for i in range((int)(thickness / X)*2):
+    for x in range((int)(length_x / 2 / X)):
+        for y in range((int)(length_z / X)):
+            model.points.append([face_pos[0]+face_normal_vector_ans[1]*X*x+face_normal_vector_ans[0]*X*i, face_pos[1]-face_normal_vector_ans[0]*X*x+face_normal_vector_ans[1]*X*i, face_pos[2]+X*y])
+            model.points.append([face_pos[0]-face_normal_vector_ans[1]*0.005*x+face_normal_vector_ans[0]*X*i, face_pos[1]+face_normal_vector_ans[0]*X*x+face_normal_vector_ans[1]*X*i, face_pos[2]+X*y])
+
+model.paint_uniform_color(np.random.rand(3))
+o3d.visualization.draw_geometries([face, model])
+
+add_color_normal(face)
+add_color_normal(model)
+size = np.abs((model.get_max_bound() - model.get_min_bound())).max() / 30
+align = align_pcds([face, model], size)
+o3d.visualization.draw_geometries(align, "aligned")
+
+o3d.visualization.draw_geometries([face, model])
