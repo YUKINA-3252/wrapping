@@ -8,9 +8,9 @@
         (setq box (elt (send msg :boxes) i))
         ;; (print (send box :dimensions :y))
         ;; (print (send box :dimensions :z))
-        (when (and (> (send box :dimensions :y) 0.1)
-                   (> (send box :dimensions :z) 0.1)
-                   (> (send box :dimensions :x) 0.1))
+        (when (and (> (send box :dimensions :y) 0.05)
+                   (> (send box :dimensions :z) 0.05)
+                   (> (send box :dimensions :x) 0.05))
           (return-from valid-boxes box))))
     nil))
 

@@ -1,3 +1,11 @@
 *~
 \#*\#
 .\#*
+wrapping/data
+wrapping_melodic/save_pcd/
+wrapping_melodic/euslisp/end-coords.xml
+wrapping_melodic/euslisp/tmp.l
+wrapping_melodic/euslisp/xml_file
+wrapping_melodic/rvizconfig/hiro.rviz
+wrapping_open3d/src/tmp.p
+wrapping_open3d/requirements.txt

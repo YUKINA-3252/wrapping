@@ -105,7 +105,7 @@ def coord_transform (pcd, transformation_matrix):
     points = (transformation_matrix @ points.T).T[:, :3]
     return points
 
-directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/202308211501"
+directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/202309231424"
 pcd_merge = o3d.io.read_point_cloud("{}/merge.pcd".format(directory_path))
 points_pcd_merge = np.array(pcd_merge.points)
 add_color_normal(pcd_merge)
@@ -180,9 +180,9 @@ arrow_x_axis_world = np.dot(arrow_x_axis_rotation, [1, 0, 0])
 arrow_y_axis_world = np.dot(arrow_y_axis_rotation, [0, 1, 0])
 arrow_z_axis_world = np.dot(arrow_z_axis_rotation, [0, 0, 1])
 arrow_pos = arrow.get_center()
-obb = o3d.geometry.OrientedBoundingBox(arrow_pos + accum_pose_list[0][:, 0][:3] * length_y / 2 + [-0.01, 0, -0.005],
+obb = o3d.geometry.OrientedBoundingBox(arrow_pos + accum_pose_list[0][:, 0][:3] * length_y / 2 + [-0.01, -0.01, -0.005],
                                        accum_pose_list[0][:3, :3],
-                                       np.array([length_y + 0.02, length_x + 0.02, length_z + 0.02]),)
+                                       np.array([length_y + 0.01, length_x + 0.01, length_z + 0.01]),)
 o3d.visualization.draw_geometries([face, model_align, obb, arrow])
 
 obb_rotation = np.eye(4)
@@ -191,7 +191,7 @@ obb_rotation[:3, 3] = obb.get_center()[:3]
 obb_org_rotation = np.eye(4)
 obb_org = o3d.geometry.OrientedBoundingBox(np.array([0, 0, 0]),
                                            np.eye(3),
-                                           np.array([length_y + 0.02, length_x + 0.02, length_z + 0.02]))
+                                           np.array([length_y + 0.01, length_x + 0.01, length_z + 0.01]))
 obb_to_obb_org_transformation_matrix = obb_org_rotation @ np.linalg.inv(obb_rotation)
 pcd_merge_org = copy.deepcopy(pcd_merge)
 points_pcd_merge_org = np.array(pcd_merge_org.points)

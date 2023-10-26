@@ -1,0 +1,34 @@
+<launch>
+  <arg name="output_prefix" default="hiro_demo" />
+  <arg name="compress" default="false" doc="whether compress rosbag or not." />
+
+  <arg name="camera_ns" default="head_camera" />
+
+  <!-- compress flag-->
+  <arg if="$(arg compress)" name="compress_flag" value="--bz2" />
+  <arg unless="$(arg compress)" name="compress_flag" value="" />
+
+  <arg name="DEPTH_CAMERA_INFO_D435" default="/realsense/aligned_depth_to_color/camera_info" />
+  <arg name="DEPTH_CAMERA_INFO_HEAD" default="/head_camera/depth_registered/sw_registered/camera_info" />
+  <arg name="DEPTH_IMAGE_D435" default="/realsense/aligned_depth_to_color/image_raw" />
+  <arg name="DEPTH_IMAGE_HEAD" default="/head_camera/depth_registered/sw_registered/image_rect_raw" />
+  <arg name="DEPTH_REMOTE_IMAGE_D435" default="/realsense_remote/depth/image_rect_raw" />
+  <arg name="DEPTH_REMOTE_IMAGE_HEAD" default="/head_camera_remote/depth/image_rect_raw" />
+  <arg name="CLOUD_D435" default="/realsense_remote/depth_registered/points" />
+  <arg name="CLOUD_HEAD" default="/head_camera_remote/depth_registered/points" />
+    <node name="hiro_rosbag_record" pkg="rosbag" type="record"
+          args="/rosout
+                /robot/joint_states
+                /tf
+                /tf_static
+                /head_camera/depth/image_rect_raw
+                /head_camera/depth/camera_info
+                /head_camera/rgb/camera_info
+                /head_camera/rgb/image_rect_color
+                /head_camera/rgb/image_raw
+                /head_camera/rgb/image_rect_color/compressed
+                /rviz/image/compressed
+                -q $(arg compress_flag) -b 0
+                --output-prefix $(arg output_prefix)"
+          output="screen" />
+</launch>

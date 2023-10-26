@@ -142,7 +142,7 @@ def atoi (text):
 def natural_keys (text):
     return [atoi(c) for c in re.split(r'(\d+)',text)]
 
-directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/202308211501"
+directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/202309231424/top"
 file = sorted(glob.glob("{}/*.pcd".format(directory_path)), key=natural_keys)
 pcds = load_pcds_path(file)
 for f in pcds:
