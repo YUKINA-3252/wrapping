@@ -1,0 +1,28 @@
+<launch>
+
+  <arg name="input_rgb_image" default="/head_camera/rgb/image_raw" />
+  <arg name="input_depth_image" default="/head_camera/depth/image_raw" />
+  <arg name="input_camera_info" default="/head_camera/depth/camera_info" />
+  <arg name="paper_corner_x" default="/paper_finder/output/corner/x" />
+  <arg name="paper_corner_y" default="/paper_finder/output/corner/y" />
+
+  <node name="feature_point_extract"
+        pkg="jsk_perception" type="optical_flow_ros.py"
+        output="screen" >
+    <remap from="~input/rgb_image" to="$(arg input_rgb_image)" />
+    <remap from="~input/depth_image" to="$(arg input_depth_image)" />
+    <remap from="~input/camera_info" to="$(arg input_camera_info)" />
+    <remap from="~paper_corner_x" to="$(arg paper_corner_x)" />
+    <remap from="~paper_corner_y" to="$(arg paper_corner_y)" />
+  </node>
+
+  <group ns="feature_point_extract" >
+    <node name="republish"
+          pkg="image_transport" type="republish"
+          args="raw compressed">
+      <remap from="in" to="output/viz" />
+      <remap from="out" to="output/viz" />
+    </node>
+  </group>
+
+</launch>
