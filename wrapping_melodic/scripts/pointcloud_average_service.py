@@ -9,18 +9,25 @@ import message_filters
 import numpy as np
 import std_msgs.msg
 
+shifted_line_points = []
+shift_width = 5
 pointcloud_z_average = 0
+
 def pointcloud_average_calculate(req):
     corner_x_topic = req.corner_x_topic
     corner_y_topic = req.corner_y_topic
     depth_image_topic = req.depth_image_topic
+    begin = req.begin
 
     sub_corner_x = message_filters.Subscriber(corner_x_topic, PaperCorner, queue_size=1)
     sub_corner_y = message_filters.Subscriber(corner_y_topic, PaperCorner, queue_size=1)
     sub_depth_image = message_filters.Subscriber(depth_image_topic, Image)
     subs = [sub_corner_x, sub_corner_y, sub_depth_image]
     sync = message_filters.ApproximateTimeSynchronizer(subs, queue_size=10, slop=0.1)
-    sync.registerCallback(callback)
+    if begin:
+        sync.registerCallback(callback_begin)
+    else:
+        sync.registerCallback(callback)
 
     return pointcloud_z_average
 
@@ -54,7 +61,7 @@ def bressham_line(x0, y0, x1, y1):
     return points
 
 
-def callback(corner_x_msg, corner_y_msg, depth_msg):
+def callback_begin(corner_x_msg, corner_y_msg, depth_msg):
     bridge = cv_bridge.CvBridge()
     depth_image = bridge.imgmsg_to_cv2(depth_msg, 'passthrough')
 
@@ -67,6 +74,7 @@ def callback(corner_x_msg, corner_y_msg, depth_msg):
 
     height, width = depth_image.shape
 
+    global shifted_line_points
     global pointcloud_z_average
     corner_y_msg_idx_list = list(enumerate(corner_y_msg.corner))
     corner_y_msg_min_idx, corner_y_msg_min_value = min(corner_y_msg_idx_list, key=lambda x: x[1])
@@ -76,8 +84,31 @@ def callback(corner_x_msg, corner_y_msg, depth_msg):
     # get the pixel sequence of the line segment connecting two points
     line_points = bressham_line(corner_y_msg.corner[corner_y_msg_min_idx], corner_x_msg.corner[corner_y_msg_min_idx],
                                 corner_y_msg.corner[corner_y_msg_2nd_min_idx], corner_x_msg.corner[corner_y_msg_2nd_min_idx])
+    shifted_line_points = []
+    for x, y in line_points:
+        for dx in range(-shift_width, shift_width + 1):
+            shifted_line_points.append((x + dx, y))
     # corner_y_msg_min_idx = corner_y_msg.corner.index(min(corner_y_msg.corner))
     # z = depth_image.reshape(-1)[corner_y_msg.corner[corner_y_msg_min_idx] * width + corner_x_msg.corner[corner_y_msg_min_idx]]
+    pointcloud_z_average = np.mean([depth_image.reshape(-1)[a * width + b] for a, b in line_points])
+
+
+def callback(depth_msg):
+    bridge = cv_bridge.CvBridge()
+    depth_image = bridge.imgmsg_to_cv2(depth_msg, 'passthrough')
+
+    if depth_msg.encoding == '16U1':
+        depth_image = np.asarray(depth_image, dtype=np.float32)
+        depth_image /= 1000.0
+    elif depth_msg.encoding != '32FC1':
+        rospy.logerr('Unsupported depth encoding: %s' %
+                     depth_msg.encoding)
+
+    height, width = depth_image.shape
+
+    global shifted_line_points
+    global pointcloud_z_average
+
     pointcloud_z_average = np.mean([depth_image.reshape(-1)[a * width + b] for a, b in line_points])
 
 
