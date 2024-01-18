@@ -1,0 +1,7 @@
+# PointCloudAverage.srv
+
+string corner_x_topic
+string corner_y_topic
+string depth_image_topic
+---
+float32 average
