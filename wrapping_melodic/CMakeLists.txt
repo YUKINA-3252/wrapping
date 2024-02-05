@@ -9,6 +9,9 @@ project(wrapping_melodic)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   jsk_recognition_msgs
+  pcl_conversions
+  pcl_msgs
+  pcl_ros
   roscpp
   rospy
   sensor_msgs
@@ -16,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
   catkin_virtualenv
   message_generation
   )
+# find_package(PCL 1.8 REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -51,16 +55,16 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  PointCloudAverageService.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
   PointCloudAverage.srv
+  PointCloudAverageSecond.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -124,9 +128,13 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  #include
+  include
   ${catkin_INCLUDE_DIRS}
   )
+# include_directories(
+#   include
+#   ${PCL_INCLUDE_DIRS}
+#   )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -141,7 +149,10 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/wrapping_node.cpp)
+add_executable(detect_tape src/detect_tape.cpp)
+# target_link_libraries(detect_tape ${PCL_LIBRARIES})
+target_link_libraries(detect_tape ${catkin_LIBRARIES})
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
