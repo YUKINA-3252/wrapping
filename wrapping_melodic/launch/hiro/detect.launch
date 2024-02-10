@@ -1,0 +1,43 @@
+<launch>
+  <machine name="localhost" address="localhost" />
+  <arg name="machine" default="localhost" />
+  <arg name="launch_manager" default="true" />
+
+  <arg name="manager" default="detect_manager" />
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen" />
+
+
+  <!-- tape stand -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper_bbox.launch">
+    <arg name="average_point_cloud_topic_name" value="/tape_stand/pos" />
+    <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_tape_stand/output"/>
+    <arg name="camera_info" value="/head_camera/depth/camera_info" />
+    <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" />
+    <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" />
+    <arg name="object_name" value="tape_stand" />
+    <arg name="manager"  value="detect_manager" />
+  </include>
+
+  <!-- rhand front -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper_bbox.launch">
+    <arg name="average_point_cloud_topic_name" value="/rhand_front/pos" />
+    <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_rhand_front/output" />
+    <arg name="camera_info" value="/head_camera/depth/camera_info" />
+    <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" />
+    <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" />
+    <arg name="object_name" value="rhand_front" />
+    <arg name="manager"  value="detect_manager" />
+  </include>
+
+  <!-- rhand back -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper_bbox.launch">
+    <arg name="average_point_cloud_topic_name" value="/rhand_back/pos" />
+    <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_rhand_back/output" />
+    <arg name="camera_info" value="/head_camera/depth/camera_info" />
+    <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" />
+    <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" />
+    <arg name="object_name" value="rhand_back" />
+    <arg name="manager"  value="detect_manager" />
+  </include>
+
+</launch>
