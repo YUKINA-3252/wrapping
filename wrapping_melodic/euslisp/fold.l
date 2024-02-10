@@ -8,7 +8,7 @@
 (reset-pose)
 (detect-pose)
 
-(setq offset 100)
+(setq offset 70)
 
 
 (detect-paper)
@@ -27,4 +27,7 @@
 (send *hironxjsk* :start-grasp :rarm)
 
 (send *target-coords-right* :translate #f(0 100 100) :world)
+(solve-ik-rarm *target-coords-right*)
+
+(send *target-coords-right* :translate #f(0 100 0) :world)
 (solve-ik-rarm *target-coords-right*)

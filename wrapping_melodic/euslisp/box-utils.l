@@ -6,9 +6,9 @@
     (when (> (length (send msg :boxes)) 0)
       (dotimes (i (length (send msg :boxes)))
         (setq box (elt (send msg :boxes) i))
-        (when (and (> (send box :dimensions :y) 0.05)
+        (when (and (> (send box :dimensions :y) 0.1)
                    (> (send box :dimensions :z) 0.05)
-                   (> (send box :dimensions :x) 0.05))
+                   (> (send box :dimensions :x) 0.2))
           (return-from valid-boxes box))))
     nil))
 
