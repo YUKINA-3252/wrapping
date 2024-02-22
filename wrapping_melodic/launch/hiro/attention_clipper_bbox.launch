@@ -1,5 +1,6 @@
 <launch>
   <arg name="average_point_cloud_topic_name" default="" />
+  <arg name="min_max_hsi_topic_name" default="" />
   <arg name="camera_info" default="" />
   <arg name="extract_point_cloud_topic_name" default="" />
   <arg name="input_cloud" default="" />
@@ -79,5 +80,6 @@
   <node name="average_point_cloud_$(arg object_name)" type="detect_tape" pkg="wrapping_melodic" output="screen" >
     <param name="extract_point_cloud_topic" value="$(arg extract_point_cloud_topic_name)"/>
     <param name="average_point_cloud_topic" value="$(arg average_point_cloud_topic_name)"/>
+    <param name="min_max_hsi_topic" value="$(arg min_max_hsi_topic_name)"/>
   </node>
 </launch>
