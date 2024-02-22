@@ -8,11 +8,11 @@
   )
 
 
-(defun create-vector (axis sign)
+(defun create-vector (axis sign num)
   (case axis
-    (:x (float-vector (if (equal sign "plus") 1 -1) 0 0))
-    (:y (float-vector 0 (if (equal sign "plus") 1 -1) 0))
-    (:z (float-vector 0 0 (if (equal sign "plus") 1 -1)))))
+    (:x (float-vector (if (equal sign "plus") num (- num)) 0 0))
+    (:y (float-vector 0 (if (equal sign "plus") num (- num)) 0))
+    (:z (float-vector 0 0 (if (equal sign "plus") num (- num))))))
 
 
 (defun get-force (arm axis &key (latest t))
@@ -28,13 +28,14 @@
   (send (gethash arm *wrench*) :wrench :force axis))
 
 
-(defun force-move (arm axis sign)
+(defun force-move (arm axis sign num th)
   (let ((first-force (get-force arm axis)))
     (while t
       (setq cur-force (get-force arm axis))
       (print (abs (- first-force cur-force)))
-      (if (> (abs (- first-force cur-force)) 1)
+      (if (> (abs (- first-force cur-force)) th)
           (return))
-      (send *hironxjsk* arm :move-end-pos (create-vector axis sign) :world)
+      (send *hironxjsk* arm :move-end-pos (create-vector axis sign num) :world)
       (send *ri* :angle-vector (send *hironxjsk* :angle-vector) 500)
-      (send *ri* :wait-interpolation))))
+      (send *ri* :wait-interpolation))
+    (send *hironxjsk* :angle-vector (send *ri* :state :potentio-vector))))
