@@ -18,22 +18,26 @@
   <arg name="RGB_REMOTE_IMAGE_HEAD" default="/head_camera_remote/rgb/image_rect_color" />
   <!-- <arg name="DEPTH_CAMERA_INFO" default="/realsense_torso/depth/compressed/camera_info" /> -->
   <arg name="DEPTH_CAMERA_INFO_D435" default="/realsense/aligned_depth_to_color/camera_info" />
-  <arg name="DEPTH_CAMERA_INFO_HEAD" default="/head_camera/depth_registered/sw_registered/camera_info" />
+  <!-- if arg name registration is false for openni.launch -->
+  <!-- <arg name="DEPTH_CAMERA_INFO_HEAD" default="/head_camera/depth_registered/sw_registered/camera_info" /> -->
+  <arg name="DEPTH_CAMERA_INFO_HEAD" default="/head_camera/depth_registered/camaera_info" />
   <arg name="DEPTH_IMAGE_D435" default="/realsense/aligned_depth_to_color/image_raw" />
-  <arg name="DEPTH_IMAGE_HEAD" default="/head_camera/depth_registered/sw_registered/image_rect_raw" />
+  <!-- if arg name registration is false for openni.launch -->
+  <!-- <arg name="DEPTH_IMAGE_HEAD" default="/head_camera/depth_registered/sw_registered/image_rect_raw" /> -->
+  <arg name="DEPTH_IMAGE_HEAD" default="/head_camera/depth_registered/hw_registered/image_rect_raw" />
   <arg name="DEPTH_REMOTE_IMAGE_D435" default="/realsense_remote/depth/image_rect_raw" />
   <arg name="DEPTH_REMOTE_IMAGE_HEAD" default="/head_camera_remote/depth/image_rect_raw" />
   <arg name="CLOUD_D435" default="/realsense_remote/depth_registered/points" />
   <arg name="CLOUD_HEAD" default="/head_camera_remote/depth_registered/points" />
 
   <node name="rgb_decompress_d435" pkg="image_transport" type="republish"
-        args="compressed in:=$(arg RGB_IMAGE_D435) out:=$(arg RGB_REMOTE_IMAGE_D435)" />
+        args="compressed in:=$(arg RGB_IMAGE_D435) raw out:=$(arg RGB_REMOTE_IMAGE_D435)" />
   <node name="rgb_decompress_head" pkg="image_transport" type="republish"
-        args="compressed in:=$(arg RGB_IMAGE_HEAD) out:=$(arg RGB_REMOTE_IMAGE_HEAD)" />
+        args="compressed in:=$(arg RGB_IMAGE_HEAD) raw out:=$(arg RGB_REMOTE_IMAGE_HEAD)" />
   <node name="depth_decompress_d435" pkg="image_transport" type="republish"
-        args="compressedDepth in:=$(arg DEPTH_IMAGE_D435) out:=$(arg DEPTH_REMOTE_IMAGE_D435)" />
+        args="compressedDepth in:=$(arg DEPTH_IMAGE_D435) raw out:=$(arg DEPTH_REMOTE_IMAGE_D435)" />
   <node name="depth_decompress_head" pkg="image_transport" type="republish"
-        args="compressedDepth in:=$(arg DEPTH_IMAGE_HEAD) out:=$(arg DEPTH_REMOTE_IMAGE_HEAD)" />
+        args="compressedDepth in:=$(arg DEPTH_IMAGE_HEAD) raw out:=$(arg DEPTH_REMOTE_IMAGE_HEAD)" />
   <node pkg="nodelet" type="nodelet" name="point_cloud_xyzrgb_d435"
         args="load depth_image_proc/point_cloud_xyzrgb $(arg manager)" output="screen" >
     <remap from="rgb/camera_info" to="$(arg RGB_CAMERA_INFO_D435)" />
@@ -57,14 +61,12 @@
 
   <!-- Launching a remote launch -->
   <arg name="launch_tabletop_detector" default="true" />
-
   <include file="$(find wrapping_melodic)/launch/hiro/hiro_remote.launch">
     <arg name="camera_ns" default="realsense" />
     <arg name="camera_type" default="d435" />
     <arg name="color" default="color" />
     <arg name="launch_tabletop_detector" value="$(arg launch_tabletop_detector)" />
   </include>
-
   <include file="$(find wrapping_melodic)/launch/hiro/hiro_remote.launch">
     <arg name="camera_ns" value="head_camera" />
     <arg name="camera_type" value="head" />
@@ -72,7 +74,61 @@
     <arg name="launch_tabletop_detector" value="$(arg launch_tabletop_detector)" />
   </include>
 
-  <arg name="INPUT" value="/bbox_cloud_extract_d435/output" />
+  <!-- transform realsense point cloud -->
+  <node name="tf_transform_cloud" pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/TfTransformCloud $(arg manager)" output="screen" >
+    <remap from="~input" to="realsense_remote/depth_registered/points"/>
+    <rosparam>
+      target_frame_id: WAIST
+    </rosparam>
+  </node>
+  <node name="transformable_interactive_server_realsense_transform"
+        pkg="jsk_interactive_marker" type="transformable_server_sample">
+    <rosparam subst_value="true">
+      display_interactive_manipulator: true
+      display_interactive_manipulator_only_selected: true
+    </rosparam>
+  </node>
+  <node name="transformable_markers_client_realsense_transform"
+        pkg="jsk_interactive_marker" type="transformable_markers_client.py" output="screen">
+    <remap from="~server" to="transformable_interactive_server_realsense_transform" />
+    <rosparam subst_value="true">
+      config_file: $(find wrapping_melodic)/config/hiro/realsense.yaml
+      config_auto_save: true
+      interactive_mode: 2  # BUTTON
+    </rosparam>
+  </node>
+  <node name="bboxes_to_bbox_realsense_transform"
+        pkg="jsk_pcl_ros_utils" type="bounding_box_array_to_bounding_box"
+        output="screen" >
+    <remap from="~input" to="transformable_markers_client_realsense_transform/output/boxes" />
+    <rosparam>
+      index: 0
+    </rosparam>
+  </node>
+  <node name="bbox_attention_clipper_realsense_transform"
+        pkg="nodelet" type="nodelet" args="load jsk_pcl/AttentionClipper $(arg manager)"
+        respawn="true" >
+    <remap from="~input/points" to="/tf_transform_cloud/output" />
+    <remap from="~input/box" to="bboxes_to_bbox_realsense_transform/output" />
+    <rosparam>
+      <!-- frame_id: tape_stand -->
+      use_multiple_attention: false
+    </rosparam>
+  </node>
+  <node name="bbox_cloud_extract_realsense_transform"
+        pkg="nodelet" type="nodelet" args="load jsk_pcl/ExtractIndices $(arg manager)"
+        output="screen" >
+    <remap from="~input" to="/tf_transform_cloud/output" />
+    <remap from="~indices" to="bbox_attention_clipper_realsense_transform/output/point_indices" />
+    <rosparam>
+      keep_organized: true
+      approximate_sync: true
+      max_queue_size: 100
+    </rosparam>
+  </node>
+
+  <arg name="INPUT" value="bbox_cloud_extract_realsense_transform/output" />
   <node name="pointcloud_to_pcd" type="nodelet" pkg="nodelet"
         args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" >
     <remap from="~input" to="$(arg INPUT)" />
@@ -83,4 +139,64 @@
       compressed: false
     </rosparam>
   </node>
+
+  <!-- <node name="pointcloud_to_pcd_rhand_back" type="nodelet" pkg="nodelet" -->
+  <!--       args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" > -->
+  <!--   <remap from="~input" to="/bbox_cloud_extract_rhand_back/output" /> -->
+  <!--   <rosparam subst_value="true"> -->
+  <!--     prefix: $(find wrapping_melodic)/save_pcd/ -->
+  <!--     duration: 0.0 -->
+  <!--     binary: false -->
+  <!--     compressed: false -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
+
+  <!-- <node name="pointcloud_to_pcd_rhand_front" type="nodelet" pkg="nodelet" -->
+  <!--       args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" > -->
+  <!--   <remap from="~input" to="/bbox_cloud_extract_rhand_front/output" /> -->
+  <!--   <rosparam subst_value="true"> -->
+  <!--     prefix: $(find wrapping_melodic)/save_pcd/ -->
+  <!--     duration: 0.0 -->
+  <!--     binary: false -->
+  <!--     compressed: false -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
+
+  <!-- attention clipper to /head_camera_remote/depth_registered/points -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
+    <arg name="camera_info" default="$(arg DEPTH_CAMERA_INFO_HEAD)" />
+    <arg name="input_cloud" default="$(arg CLOUD_HEAD)" />
+    <arg name="input_image" default="$(arg DEPTH_REMOTE_IMAGE_HEAD)" />
+    <arg name="identify_name" default="head_remote_attention_clipper" />
+    <arg name="manager"  value="$(arg manager)" />
+  </include>
+
+  <!-- hsi color filter for tape-->
+  <node name="hsi_color_filter_tape" type="nodelet" pkg="nodelet"
+        args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" >
+    <remap from="~input" to="/head_camera_remote/depth_registered/points" />
+    <rosparam>
+      h_limit_min: -95
+      s_limit_min: 55
+      i_limit_min: 140
+      h_limit_max: 25
+      s_limit_max: 70
+      i_limit_max: 150
+    </rosparam>
+  </node>
+
+  <!-- hsi color filter for paper-->
+  <node name="hsi_color_filter_paper" type="nodelet" pkg="nodelet"
+        args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" >
+    <remap from="~input" to="/bbox_cloud_extract_head_remote_attention_clipper/output" />
+    <rosparam>
+      h_limit_min: 15
+      s_limit_min: 25
+      i_limit_min: 100
+      h_limit_max: 74
+      s_limit_max: 100
+      i_limit_max: 150
+    </rosparam>
+  </node>
+
 </launch>

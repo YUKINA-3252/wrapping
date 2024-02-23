@@ -27,7 +27,7 @@
           output="screen">
       <remap from="~server" to="transformable_interactive_server_$(arg camera_type)" />
       <rosparam subst_value="true">
-        config_file: $(find wrapping_melodic)/config/hiro/workspace_transformable_markers_client.yaml
+        config_file: $(find wrapping_melodic)/config/hiro/workspace_transformable_markers_client_copy.yaml
         config_auto_save: true
         interactive_mode: 2  # BUTTON
       </rosparam>
@@ -146,6 +146,7 @@
     <rosparam subst_value="true">
       align_boxes: true
       align_boxes_with_plane: false
+      <!-- target_frame_id: BASE_TOP -->
       target_frame_id: BASE_TOP
       use_pca: true
       sort_by: cloud_size
@@ -178,6 +179,7 @@
     <rosparam>
       align_boxes: true
       align_boxes_with_plane: false
+      <!-- target_frame_id: BASE_TOP -->
       target_frame_id: BASE_TOP
       use_pca: true
       sort_by: cloud_size
