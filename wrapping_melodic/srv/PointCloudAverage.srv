@@ -3,6 +3,5 @@
 string corner_x_topic
 string corner_y_topic
 string depth_image_topic
-bool begin
 ---
-float32 average
+wrapping_melodic/PointCloudAverageService result

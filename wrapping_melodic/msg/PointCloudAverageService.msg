@@ -1,0 +1,2 @@
+float32 average
+int32[] shifted_line_points_int_multi_array

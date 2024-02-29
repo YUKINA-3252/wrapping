@@ -1,30 +1,55 @@
+#include <cmath>
 #include <ros/ros.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/PointStamped.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <pcl/point_cloud.h>
+#include <pcl/common/io.h>
+#include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/common.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/segmentation/extract_clusters.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/project_inliers.h>
+#include <pcl/filters/radius_outlier_removal.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/features/moment_of_inertia_estimation.h>
+#include <pcl/common/centroid.h>
+#include <pcl/common/transforms.h>
+#include <pcl/search/search.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/segmentation/progressive_morphological_filter.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf2_ros/transform_listener.h>
+
 
 double average_x = 0.0;
 double average_y = 0.0;
 double average_z = 0.0;
 geometry_msgs::PointStamped target_point;
 ros::Publisher pub;
+
+
 void pclCallback(const sensor_msgs::PointCloud2 msg){
-  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_nan(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcl_cloud_nan(new pcl::PointCloud<pcl::PointXYZRGB>);
+  // pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-  pcl::ExtractIndices<pcl::PointXYZ> extract;
+  // pcl::ExtractIndices<pcl::PointXYZ> extract;
   pcl::fromROSMsg(msg, *pcl_cloud_nan);
 
   double sum_x = 0.0;
   double sum_y = 0.0;
   double sum_z = 0.0;
+
   int pcl_cloud_size = 0;
   for (int i = 0; i < (*pcl_cloud_nan).size(); i++) {
     if (!std::isnan(pcl_cloud_nan->points[i].x) && !std::isnan(pcl_cloud_nan->points[i].y) && !std::isnan(pcl_cloud_nan->points[i].z)) {

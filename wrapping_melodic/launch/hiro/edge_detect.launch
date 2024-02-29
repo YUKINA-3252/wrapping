@@ -1,9 +1,7 @@
 <launch>
-  <arg name="input_image" default="/head_camera/rgb/image_raw" />
+  <!-- <arg name="input_image" default="/head_camera/rgb/image_raw" /> -->
+  <arg name="input_image" default="/head_camera_remote/rgb/image_rect_color" />
   <arg name="input_depth_image" default="/head_camera_remote/depth/image_rect_raw" />
-  <!-- <arg name="input_camera_info" default="/head_camera/depth/camera_info" /> -->
-  <!-- if arg name registration is false for openni.launch -->
-  <!-- <arg name="input_camera_info" default="/head_camera/depth_registered/sw_registered/camera_info" /> -->
   <arg name="input_camera_info" default="/head_camera/depth_registered/camera_info" />
 
   <arg name="box_len_x" default="0.14" />
@@ -17,10 +15,10 @@
     <remap from="~input/depth" to="$(arg input_depth_image)" />
     <remap from="~input/camera_info" to="$(arg input_camera_info)" />
     <rosparam>
-      area_tolerance: 0.2
+      area_tolerance: 0.4
       approximate_sync: true
-      length_tolerance: 0.1
-      rect_x: 0.1
+      length_tolerance: 0.2
+      rect_x: 0.2
       rect_y: 0.6
       width_depth: true
     </rosparam>
@@ -30,8 +28,8 @@
   <node name="edge_finder_paper"
         pkg="jsk_perception" type="edge_finder.py"
         output="screen" >
-    <remap from="~input" to="/head_camera_remote/rgb/image_rect_color" />
-    <remap from="~input/depth" to="/head_camera_remote/depth/image_rect_raw" />
+    <remap from="~input" to="$(arg input_image)" />
+    <remap from="~input/depth" to="$(arg input_depth_image)" />
     <remap from="~input/camera_info" to="$(arg input_camera_info)" />
     <rosparam>
       approximate_sync: true
@@ -46,7 +44,6 @@
       width_depth: true
     </rosparam>
   </node>
-
   <!-- box edge -->
   <node name="edge_finder_box"
         pkg="jsk_perception" type="edge_finder.py"

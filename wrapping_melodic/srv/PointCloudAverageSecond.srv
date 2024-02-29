@@ -1,0 +1,6 @@
+# PointCloudAverageSecond.srv
+
+int32[] shifted_line_points_int_multi_array
+string depth_image_topic
+---
+float32 average

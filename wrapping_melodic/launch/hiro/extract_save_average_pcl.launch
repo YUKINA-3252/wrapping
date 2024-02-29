@@ -1,7 +1,6 @@
 <launch>
   <arg name="average_point_cloud_topic_name" default="" />
   <arg name="min_max_hsi_topic_name" default="" />
-  <arg name="camera_info" default="" />
   <arg name="extract_point_cloud_topic_name" default="" />
   <arg name="input_cloud" default="" />
   <arg name="input_image" default="" />
@@ -10,7 +9,6 @@
 
   <!-- attention_clipper -->
   <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
-    <arg name="camera_info" default="$(arg camera_info)" />
     <arg name="input_cloud" default="$(arg input_cloud)" />
     <arg name="identify_name" default="$(arg identify_name)" />
     <arg name="manager"  value="$(arg manager)" />

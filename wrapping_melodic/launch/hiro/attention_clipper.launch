@@ -1,7 +1,5 @@
 <launch>
-  <arg name="camera_info" default="" />
   <arg name="input_cloud" default="" />
-  <arg name="input_image" default="" />
   <arg name="manager" default="" />
   <arg name="identify_name" default="" />
 
@@ -38,7 +36,6 @@
   <node name="bbox_attention_clipper_$(arg identify_name)"
         pkg="nodelet" type="nodelet" args="load jsk_pcl/AttentionClipper $(arg manager)"
         respawn="true" >
-    <remap from="~input" to="$(arg camera_info)" />
     <remap from="~input/points" to="$(arg input_cloud)" />
     <remap from="~input/box" to="bboxes_to_bbox_$(arg identify_name)/output" />
     <rosparam>

@@ -105,21 +105,21 @@ def coord_transform (pcd, transformation_matrix):
     points = (transformation_matrix @ points.T).T[:, :3]
     return points
 
-directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/202308181324"
+directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/202309231424"
 pcd_merge = o3d.io.read_point_cloud("{}/merge.pcd".format(directory_path))
 points_pcd_merge = np.array(pcd_merge.points)
 add_color_normal(pcd_merge)
 pcds = [pcd_merge]
-# o3d.visualization.draw_geometries(pcds, "merged")
+o3d.visualization.draw_geometries([pcd_merge])
 
-face_normal_vector_model = np.asarray([-1.0, 0.0, 0.0])
+face_normal_vector_model = np.asarray([0.0, 0.0, 1.0])
 
 if "face.pcd" in os.listdir(directory_path):
     pass
 else:
     inliers = []
 
-    plane_model_table, inliers_table = pcd_merge.segment_plane(distance_threshold=0.003, ransac_n=3, num_iterations=1000)
+    plane_model_table, inliers_table = pcd_merge.segment_plane(distance_threshold=0.005, ransac_n=3, num_iterations=1000)
     inlier_cloud_table = pcd_merge.select_by_index(inliers_table)
     inlier_cloud_table.paint_uniform_color(np.random.rand(3))
     inliers.append(inlier_cloud_table)
@@ -139,36 +139,40 @@ else:
     o3d.io.write_point_cloud("{}/face.pcd".format(directory_path), inliers[-1])
 
 face = o3d.io.read_point_cloud("{}/face.pcd".format(directory_path))
+o3d.visualization.draw_geometries([face])
 
 model = o3d.geometry.PointCloud()
 length_x = 0.22
 length_y = 0.15
 length_z = 0.11
-thickness = 0.003
+paper_x = 0.16
+paper_y = 0.08
+thickness = 0.005
 points = np.asarray(face.points).shape[0]
-face_pos = np.asarray([480, 0, -20]) * 0.001
+face_pos = np.asarray([575, 96, 25]) * 0.001
 
-X = ((length_x * length_z * thickness) / points) ** (1/3)
-model_point = np.asarray([[face_pos[0], face_pos[1], face_pos[2]+X*(int)(-length_z/X/2), 1.0],
-                          [face_pos[0], face_pos[1], face_pos[2]+X*(int)(length_z/X/2), 1.0]])
-for i in range((int)(thickness / X)*2):
-    for x in range((int)(length_x / 2 / X)):
-        for y in range((int)(-length_z / X / 2), (int)(length_z / X / 2)):
-            model.points.append([face_pos[0]+face_normal_vector_model[1]*X*x+face_normal_vector_model[0]*X*i, face_pos[1]-face_normal_vector_model[0]*X*x+face_normal_vector_model[1]*X*i, face_pos[2]+X*y])
-            model.points.append([face_pos[0]-face_normal_vector_model[1]*0.005*x+face_normal_vector_model[0]*X*i, face_pos[1]+face_normal_vector_model[0]*X*x+face_normal_vector_model[1]*X*i, face_pos[2]+X*y])
+X = (((length_x * length_y + paper_x * paper_y) * thickness) / points) ** (1/3)
+# model_point = np.asarray([[face_pos[0], face_pos[1], face_pos[2]+X*(int)(-length_z/X/2), 1.0],
+#                           [face_pos[0], face_pos[1], face_pos[2]+X*(int)(length_z/X/2), 1.0]])
+for i in range((int)(-thickness / 2 / X), (int)(thickness / 2 / X)):
+    for x in range((int)(-length_y / 2 / X), (int)(length_y / 2 / X)):
+        for y in range((int)(-length_x / X / 2), (int)(length_x / X / 2)):
+            model.points.append([face_pos[0]+X*x, face_pos[1]+X*y, face_pos[2]+X*i])
+for i in range((int)(- thickness / 2 / X), (int)(thickness / 2 / X)):
+    for x in range((int)(-paper_y / 2 / X), (int)(paper_y / 2 / X)):
+        for y in range((int)(-paper_x / 2 / X), (int)(paper_x / 2 / X)):
+            model.points.append([face_pos[0]+(length_y/2+paper_y/2)+X*x, face_pos[1]+(length_x/2-paper_x/2)+X*y, face_pos[2]+X*i])
 
 model.paint_uniform_color(np.random.rand(3))
 o3d.io.write_point_cloud("{}/model.pcd".format(directory_path), model)
-# o3d.visualization.draw_geometries([face, model])
-
 add_color_normal(face)
 add_color_normal(model)
+
 size = np.abs((model.get_max_bound() - model.get_min_bound())).max() / 30
 (align, accum_pose_list) = align_pcds([face, model], size)
 o3d.visualization.draw_geometries(align, "aligned")
 o3d.io.write_point_cloud("{}/model_align.pcd".format(directory_path), model)
 model_align = o3d.io.read_point_cloud("{}/model_align.pcd".format(directory_path))
-model = o3d.io.read_point_cloud("{}/model.pcd".format(directory_path))
 
 face_normal_vector_real_pos = accum_pose_list[0] @ np.append(face_pos, 1.0)
 arrow = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=face_pos)
@@ -180,7 +184,7 @@ arrow_x_axis_world = np.dot(arrow_x_axis_rotation, [1, 0, 0])
 arrow_y_axis_world = np.dot(arrow_y_axis_rotation, [0, 1, 0])
 arrow_z_axis_world = np.dot(arrow_z_axis_rotation, [0, 0, 1])
 arrow_pos = arrow.get_center()
-obb = o3d.geometry.OrientedBoundingBox(arrow_pos + accum_pose_list[0][:, 0][:3] * length_y / 2 + [-0.01, -0.01, -0.005],
+obb = o3d.geometry.OrientedBoundingBox(arrow_pos - accum_pose_list[0][:, 2][:3] * length_z / 2 + [-0.005, -0.005, -0.01],
                                        accum_pose_list[0][:3, :3],
                                        np.array([length_y + 0.01, length_x + 0.01, length_z + 0.01]),)
 o3d.visualization.draw_geometries([face, model_align, obb, arrow])
@@ -219,7 +223,7 @@ pcd_merge_outside = o3d.geometry.PointCloud()
 pcd_merge_outside.points = o3d.utility.Vector3dVector(points_pcd_merge_outside)
 add_color_normal(pcd_merge_inside)
 add_color_normal(pcd_merge_outside)
-o3d.visualization.draw_geometries([obb, pcd_merge_outside])
+# o3d.visualization.draw_geometries([obb, pcd_merge_outside])
 
 inliers = []
 _, inliers_table = pcd_merge_outside.segment_plane(distance_threshold=0.007, ransac_n=3, num_iterations=1000)

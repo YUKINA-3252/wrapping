@@ -103,7 +103,7 @@
 (solve-ik-larm *target-coords-left*)
 
 (dotimes (i 10)
-  (write-txt-and-solve-ik-sphere (* i 10) 140 70 "txt_file/end_coords.txt")
+  (write-txt-and-solve-ik-sphere (* i 10) 120 70 "txt_file/end_coords.txt")
   (ir2ri)
   (ros::wait-for-service "/pointcloud_to_pcd/save_pcd" 1)
   (setq req (instance std_srvs::EmptyRequest :init))

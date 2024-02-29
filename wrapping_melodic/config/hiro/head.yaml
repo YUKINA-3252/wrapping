@@ -1,4 +1,4 @@
-frame_id: HEAD_JOINT1_Link
+frame_id: HEAD_JOINT0_Link
 initial_x: 0.0
 initial_y: 0.0
 initial_z: 0.0

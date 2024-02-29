@@ -75,68 +75,11 @@
   </include>
 
   <!-- transform realsense point cloud -->
-  <node name="tf_transform_cloud" pkg="nodelet" type="nodelet"
+  <node name="realsense_tf_transform_cloud" pkg="nodelet" type="nodelet"
         args="load jsk_pcl_utils/TfTransformCloud $(arg manager)" output="screen" >
     <remap from="~input" to="realsense_remote/depth_registered/points"/>
     <rosparam>
       target_frame_id: WAIST
-    </rosparam>
-  </node>
-  <node name="transformable_interactive_server_realsense_transform"
-        pkg="jsk_interactive_marker" type="transformable_server_sample">
-    <rosparam subst_value="true">
-      display_interactive_manipulator: true
-      display_interactive_manipulator_only_selected: true
-    </rosparam>
-  </node>
-  <node name="transformable_markers_client_realsense_transform"
-        pkg="jsk_interactive_marker" type="transformable_markers_client.py" output="screen">
-    <remap from="~server" to="transformable_interactive_server_realsense_transform" />
-    <rosparam subst_value="true">
-      config_file: $(find wrapping_melodic)/config/hiro/realsense.yaml
-      config_auto_save: true
-      interactive_mode: 2  # BUTTON
-    </rosparam>
-  </node>
-  <node name="bboxes_to_bbox_realsense_transform"
-        pkg="jsk_pcl_ros_utils" type="bounding_box_array_to_bounding_box"
-        output="screen" >
-    <remap from="~input" to="transformable_markers_client_realsense_transform/output/boxes" />
-    <rosparam>
-      index: 0
-    </rosparam>
-  </node>
-  <node name="bbox_attention_clipper_realsense_transform"
-        pkg="nodelet" type="nodelet" args="load jsk_pcl/AttentionClipper $(arg manager)"
-        respawn="true" >
-    <remap from="~input/points" to="/tf_transform_cloud/output" />
-    <remap from="~input/box" to="bboxes_to_bbox_realsense_transform/output" />
-    <rosparam>
-      <!-- frame_id: tape_stand -->
-      use_multiple_attention: false
-    </rosparam>
-  </node>
-  <node name="bbox_cloud_extract_realsense_transform"
-        pkg="nodelet" type="nodelet" args="load jsk_pcl/ExtractIndices $(arg manager)"
-        output="screen" >
-    <remap from="~input" to="/tf_transform_cloud/output" />
-    <remap from="~indices" to="bbox_attention_clipper_realsense_transform/output/point_indices" />
-    <rosparam>
-      keep_organized: true
-      approximate_sync: true
-      max_queue_size: 100
-    </rosparam>
-  </node>
-
-  <arg name="INPUT" value="bbox_cloud_extract_realsense_transform/output" />
-  <node name="pointcloud_to_pcd" type="nodelet" pkg="nodelet"
-        args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" >
-    <remap from="~input" to="$(arg INPUT)" />
-    <rosparam subst_value="true">
-      prefix: $(find wrapping_melodic)/save_pcd/
-      duration: 0.0
-      binary: false
-      compressed: false
     </rosparam>
   </node>
 
@@ -164,10 +107,13 @@
 
   <!-- attention clipper to /head_camera_remote/depth_registered/points -->
   <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
-    <arg name="camera_info" default="$(arg DEPTH_CAMERA_INFO_HEAD)" />
     <arg name="input_cloud" default="$(arg CLOUD_HEAD)" />
-    <arg name="input_image" default="$(arg DEPTH_REMOTE_IMAGE_HEAD)" />
     <arg name="identify_name" default="head_remote_attention_clipper" />
+    <arg name="manager"  value="$(arg manager)" />
+  </include>
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
+    <arg name="input_cloud" default="/realsense_tf_transform_cloud/output" />
+    <arg name="identify_name" default="realsense_transform" />
     <arg name="manager"  value="$(arg manager)" />
   </include>
 
@@ -176,15 +122,14 @@
         args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" >
     <remap from="~input" to="/head_camera_remote/depth_registered/points" />
     <rosparam>
-      h_limit_min: -95
-      s_limit_min: 55
-      i_limit_min: 140
-      h_limit_max: 25
-      s_limit_max: 70
-      i_limit_max: 150
+      h_limit_min: -81
+      s_limit_min: 43
+      i_limit_min: 88
+      h_limit_max: -31
+      s_limit_max: 67
+      i_limit_max: 162
     </rosparam>
   </node>
-
   <!-- hsi color filter for paper-->
   <node name="hsi_color_filter_paper" type="nodelet" pkg="nodelet"
         args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" >
