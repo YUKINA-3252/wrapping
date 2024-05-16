@@ -17,17 +17,18 @@
   <arg name="CLOUD_D435" default="/realsense_remote/depth_registered/points" />
   <arg name="CLOUD_HEAD" default="/head_camera_remote/depth_registered/points" />
     <node name="hiro_rosbag_record" pkg="rosbag" type="record"
-          args="/rosout
-                /robot/joint_states
+          args="
+                /head_camera/depth/camera_info
+                /head_camera/depth_registered/camera_info
+                /head_camera/rgb/camera_info
+                /joint_states
+                /rosout
+                /rviz/image/compressed
+                /tape_stand/pos
                 /tf
                 /tf_static
-                /head_camera/depth/image_rect_raw
-                /head_camera/depth/camera_info
-                /head_camera/rgb/camera_info
-                /head_camera/rgb/image_rect_color
-                /head_camera/rgb/image_raw
-                /head_camera/rgb/image_rect_color/compressed
-                /rviz/image/compressed
+                /head_camera/depth/image_raw/compressedDepth
+                /head_camera/rgb/image_raw/compressed
                 -q $(arg compress_flag) -b 0
                 --output-prefix $(arg output_prefix)"
           output="screen" />

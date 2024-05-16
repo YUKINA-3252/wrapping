@@ -135,7 +135,7 @@ def store_trans (file_path, line_num):
         trans[:3, 3] = pos
         trans = trans @ quaternion_to_rotationMatrix(np.array([0.5, -0.5, 0.5, 0.5]), np.array([0.0, 0.0, 0.0]))
 
-    return trans
+n    return trans
 
 def atoi (text):
     return int(text) if text.isdigit() else text

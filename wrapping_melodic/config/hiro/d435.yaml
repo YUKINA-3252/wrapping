@@ -1,5 +1,5 @@
-frame_id: LARM_JOINT5_Link
-initial_x: 0.0
-initial_y: 0.0
-initial_z: 0.0
-initial_orientation: [-0.7071, 0.7071, 0.0, 0.0]
+frame_id: RARM_JOINT5_Link
+initial_x: 0.023292750257
+initial_y: 0.0248714389445
+initial_z: -0.068185812371
+initial_orientation: [0.706392822665, -0.706382633127, 0.031877107368, 0.0318842552105]

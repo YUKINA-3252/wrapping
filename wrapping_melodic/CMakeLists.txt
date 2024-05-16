@@ -150,8 +150,10 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(detect_tape src/detect_tape.cpp)
+add_executable(detect_hsi src/detect_hsi.cpp)
 # target_link_libraries(detect_tape ${PCL_LIBRARIES})
 target_link_libraries(detect_tape ${catkin_LIBRARIES})
+target_link_libraries(detect_hsi ${catkin_LIBRARIES})
 
 
 ## Rename C++ executable without prefix
