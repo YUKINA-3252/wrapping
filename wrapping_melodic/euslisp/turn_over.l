@@ -76,9 +76,9 @@
     (ir2ri-hand)))
 (defun close-rhand()
   (let ((hand-angle-vector (send *hironxjsk* :hand-angle-vector :rhand)))
-    (setf (aref hand-angle-vector 0) 0)
+    (setf (aref hand-angle-vector 0) -10)
     (setf (aref hand-angle-vector 1) -40)
-    (setf (aref hand-angle-vector 2) 40)
+    (setf (aref hand-angle-vector 2) 30)
     (setf (aref hand-angle-vector 3) -10)
     (send *hironxjsk* :hand-angle-vector :rhand hand-angle-vector)
     (ir2ri-hand)))
@@ -219,6 +219,7 @@
 
 (reset-pose)
 (detect-paper)
+(send *target-paper-arrow* :rotate pi :x)
 ;; (unix::system "rosservice call /pointcloud_average_service /paper_finder/output/corner/x /paper_finder/output/corner/y /head_camera_remote/depth/image_rect_raw True")
 (detect-box)
 (setq object-list (list *hironxjsk* *right-coords-arrow* *left-coords-arrow* *right-target-arrow* *left-target-arrow* *target-bbox* *target-bbox-arrow* *target-paper* *target-paper-arrow*))
@@ -226,46 +227,47 @@
 
 (setq box-z-size (- (+ (elt (send (send *target-bbox* :copy-worldcoords) :pos) 2) (/ (z-of-cube *target-bbox*) 2)) (elt (send (send *target-paper* :copy-worldcoords) :pos) 2)))
 
+;; reach tape
+(setq tape-msg (send (one-shot-subscribe "/tape_stand/pos" std_msgs::Float32MultiArray :timeout 2000) :data))
+(unix::sleep 2)
+
 ;; hold box with left hand
-(open-lhand)
-(setq box-left-up-coords (send (send *target-bbox* :copy-worldcoords) :locate (float-vector (elt (send *target-bbox* :pos) 0) (+ (elt (send *target-bbox* :pos) 1) (/ (x-of-cube *target-bbox*) 2)) (+ (elt (send *target-bbox* :pos) 2) (/ box-z-size 2))) :world))
-(send *left-target-arrow* :move-to (send (send (send *hironxjsk* :larm :end-coords :copy-worldcoords) :rotate pi/2 :z) :locate (send (send (send box-left-up-coords :copy-worldcoords) :translate #f(0 -30 -30) :world) :pos) :world) :world)
+(send *left-target-arrow* :move-to (send (send (send (send *target-bbox* :copy-worldcoords) :translate (float-vector 0 (+ (/ (y-of-cube *target-bbox*) 2) 80) (- (/ box-z-size 2))) :world) :rotate pi :z) :rotate pi :x) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-;; push box
-(force-move :larm :z "minux" 1 5)
-(send *left-target-arrow* :move-to (send *hironxjsk* :larm :end-coords :copy-worldcoords) :world)
+(force-move :larm :z "minus" 3 3)
 
+;;rhand
 (open-rhand)
- ;; detect-paper recog is slight off so set the offset
-;; (send *right-target-arrow* :move-to (send (send (send (send *target-paper-arrow* :copy-worldcoords) :rotate (deg2rad 90) :z) :rotate (deg2rad -90) :x) :translate (float-vector (- offset-paper-detect) (- (/ z-of-paper 2)) 50) :world) :world)
-;; (solve-ik-rarm *right-target-arrow*)
-(send *right-target-arrow* :move-to (send (send (send (send *target-paper-arrow* :copy-worldcoords) :rotate (deg2rad 90) :z) :rotate (deg2rad -90) :x) :translate (float-vector -10 (+ (- (/ z-of-paper 2)) -30) 30) :world) :world)
+(send *right-target-arrow* :move-to (send (send (send (send *target-paper-arrow* :copy-worldcoords) :rotate (deg2rad 90) :z) :rotate (deg2rad -90) :x) :translate (float-vector -10 (+ (- (/ z-of-paper 2)) -40) 20) :world) :world)
 (solve-ik-rarm *right-target-arrow*)
 (ir2ri)
 ;; lower right arm until it hits the desk
 (force-move :rarm :z "minux" 1 1)
 (send *right-target-arrow* :move-to (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :world)
-;; (send *right-target-arrow* :translate #f(0 30 0) :world)
-;; (solve-ik-rarm *right-target-arrow*)
-;; (ir2ri)
-;; (send *right-target-arrow* :translate #f(0 0 10) :world)
-;; (solve-ik-rarm *right-target-arrow*)
-;; (ir2ri)
-;; move right arm closer to the paper
-(send *right-target-arrow* :translate #f(0 60 0) :world)
+(send *right-target-arrow* :translate #f(0 30 0) :world)
 (solve-ik-rarm *right-target-arrow*)
 (ir2ri)
-;; move right arm up
-(send *right-target-arrow* :translate #f(0 0 10) :world)
+(send *right-target-arrow* :translate #f(0 0 20) :world)
+(solve-ik-rarm *right-target-arrow*)
+(ir2ri)
+(send *right-target-arrow* :rotate (deg2rad 20) :x :world)
+(solve-ik-rarm *right-target-arrow*)
+(ir2ri)
+(send *right-target-arrow* :translate #f(0 20 0) :world)
 (solve-ik-rarm *right-target-arrow*)
 (ir2ri)
 ;; close hand
 (close-rhand)
+(unix::sleep 2)
+(send *right-target-arrow* :rotate (deg2rad -20) :x :world)
+(send *right-target-arrow* :translate #f(0 0 -10) :world)
+(solve-ik-rarm *right-target-arrow*)
+(ir2ri)
 
 ;; impedance
-(setq set-force 4)
-(send *ri* :set-impedance-controller-param :rarm :force-gain #f(0.3 0.3 0.3) :moment-gain #f(0 100 0))
+(setq set-force 1)
+(send *ri* :set-impedance-controller-param :rarm :force-gain #f(0.2 0.2 0.2) :moment-gain #f(0 30 0))
 (send *ri* :set-ref-force-moment (float-vector 0 0 (- set-force)) #f(0 0 0) 1000 :rarm)
 (setq before-potentio-vector  (send *ri* :state :potentio-vector))
 (send *ri* :start-impedance :rarm)
@@ -273,14 +275,8 @@
 (send *hironxjsk* :angle-vector (send *ri* :state :potentio-vector))
 (send *right-target-arrow* :move-to (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :world)
 
-;; (send *right-target-arrow* :rotate (deg2rad -20) :y)
-;; (solve-ik-rarm *right-target-arrow*)
-
-;; Move right hand to the top of the box
-;; (setq box-right-coords (send (send *target-bbox* :copy-worldcoords) :locate (float-vector (elt (send *target-bbox* :pos) 0) (+ (elt (send *target-bbox* :pos) 1) (- (/ (x-of-cube *target-bbox*) 2))) (elt (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :worldpos) 2)) :world))
 (setq box-right-coords (send (send *target-bbox* :copy-worldcoords) :locate (float-vector (elt (send (send *right-target-arrow* :copy-worldcoords) :pos) 0) (+ (elt (send *target-bbox* :pos) 1) (- (/ (x-of-cube *target-bbox*) 2))) (elt (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :worldpos) 2)) :world))
 (setq hand-box-right-len (- (elt (send (send box-right-coords :copy-worldcoords) :pos) 1) (elt (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :pos) 1)))
-
 (setq avs nil)
 (dotimes (theta 90)
   (send *right-target-arrow* :move-to (send (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :locate (send (send box-right-coords :copy-worldcoords) :pos) :world) :translate (float-vector 0 (- (* hand-box-right-len (cos (deg2rad theta)))) (* hand-box-right-len (sin (deg2rad theta)))) :world) :world)
@@ -288,16 +284,7 @@
   (push (send *hironxjsk* :angle-vector) avs)
   (send *irtviewer* :draw-objects))
 (setq avs (reverse avs))
-(send *ri* :angle-vector-sequence avs 100)
-
-;; (dotimes (x 10)
-;;   (send *right-target-arrow* :move-to (send (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :locate (send (send box-right-coords :copy-worldcoords) :pos) :world) :translate (float-vector 0 (- (* hand-box-right-len (cos (deg2rad (* x 10))))) (* hand-box-right-len (sin (deg2rad (* x 10))))) :world) :world)
-;;   (solve-ik-rarm *right-target-arrow*)
-;;   (send *irtviewer* :draw-objects)
-;;   (ir2ri 1000)
-;;   (send *ri* :set-ref-force-moment (float-vector 0 (* set-force (cos (* x 10))) (- (* set-force (sin (* x 10))))) #f(0 0 0) 1000 :rarm)
-;;   (unix::sleep 1)
-;;   )
+(send *ri* :angle-vector-sequence avs 150)
 
 (setq after-potentio-vector (send *ri* :state :potentio-vector))
 (send *ri* :stop-impedance :rarm)
@@ -306,9 +293,8 @@
 
 (setq box-right-up-coords (send (send *target-bbox* :copy-worldcoords) :locate (float-vector (elt (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :pos) 0) (elt (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :pos) 1) (elt (send (send (send *target-bbox* :copy-worldcoords) :translate (float-vector 0 0 (/ (z-of-cube *target-bbox*) 2)) :world):worldpos) 2)) :world))
 (setq hand-to-box-right-up-coords (- (elt (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :pos) 2) (elt (send (send box-right-up-coords :copy-worldcoords) :pos) 2)))
-
-(setq set-force 4)
-(send *ri* :set-impedance-controller-param :rarm :force-gain #f(0.3 0.3 0.3) :moment-gain #f(0 100 0))
+(setq set-force 3)
+(send *ri* :set-impedance-controller-param :rarm :force-gain #f(0.1 0.1 0.1) :moment-gain #f(0 30 0))
 (send *ri* :set-ref-force-moment (float-vector 0 (- set-force) 0) #f(0 0 0) 1000 :rarm)
 (setq before-potentio-vector  (send *ri* :state :potentio-vector))
 (send *ri* :start-impedance :rarm)
@@ -317,48 +303,43 @@
 (send *right-target-arrow* :move-to (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :world)
 
 (setq avs nil)
-(dotimes (theta 60)
+(setq before-rarm-z-force (get-force :rarm :z))
+(dotimes (theta 90)
   (send *right-target-arrow* :locate (send (send (send box-right-up-coords :copy-worldcoords) :translate (float-vector 0 (* hand-to-box-right-up-coords (sin (deg2rad theta))) (* hand-to-box-right-up-coords (cos (deg2rad theta)))) :world) :pos) :world)
   (solve-ik-rarm *right-target-arrow*)
   (push (send *hironxjsk* :angle-vector) avs)
   (send *irtviewer* :draw-objects))
 (setq avs (reverse avs))
 (send *ri* :angle-vector-sequence avs 100)
+;; force detect
+(while t
+  (setq after-rarm-z-force (get-force :rarm :z))
+  (if (> (abs (- after-rarm-z-force before-rarm-z-force)) 1)
+      (progn
+        (send *ri* :cancel-angle-vector)
+        (send *ri* :wait-interpolation))))
 
 (setq after-potentio-vector (send *ri* :state :potentio-vector))
-;; (dotimes (x 10)
-;;   (send *right-target-arrow* :move-to (send (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :locate (send (send box-right-up-coords :copy-worldcoords) :pos) :world) :translate (float-vector 0 (* (- hand-box-right-len box-z-size) (sin (deg2rad (* x 10)))) (* (- hand-box-right-len box-z-size) (cos (deg2rad (* x 10))))) :world) :world)
-;;   (solve-ik-rarm *right-target-arrow*)
-;;   (send *irtviewer* :draw-objects)
-;;   (ir2ri 1000)
-;;   (send *ri* :set-ref-force-moment (float-vector 0 (- (* set-force (sin (* x 10)))) (- (* set-force (cos (* x 10))))) #f(0 0 0) 1000 :rarm)
-;;   (send *ri* :wait-interpolation)
-;;   (unix::sleep 1)
-;;   (setq after-potentio-vector (send *ri* :state :potentio-vector))
-;;   )
 (send *ri* :stop-impedance :rarm)
 
 (send *hironxjsk* :angle-vector after-potentio-vector)
 (ir2ri 1)
-;; (send *right-target-arrow* :rotate (deg2rad 10) :y)
-;; (solve-ik-rarm *right-target-arrow*)
-
 ;; push right hand to box
 (force-move :rarm :z "minux" 1 3)
 (send *right-target-arrow* :move-to (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :world)
 
 ;; rotate rarm
 (send *right-target-arrow* :rotate (deg2rad 10) :x)
-(send *right-target-arrow* :translate #f(0 0 5) :world)
 (solve-ik-rarm *right-target-arrow*)
 (ir2ri)
 (close-rhand-finish-fold)
 (unix::sleep 2)
 (send *right-target-arrow* :rotate (deg2rad 10) :x)
+(send *right-target-arrow* :translate #f(0 -10 0) :world)
 (solve-ik-rarm *right-target-arrow*)
 (ir2ri)
 (send *right-target-arrow* :rotate (deg2rad 10) :x)
-(send *right-target-arrow* :translate #f(0 0 5) :world)
+(send *right-target-arrow* :translate #f(0 -10 0) :world)
 (solve-ik-rarm *right-target-arrow*)
 (ir2ri)
 (close-rhand-finish-fold-2nd)
@@ -367,62 +348,47 @@
 (send *left-target-arrow* :translate #f(0 0 100) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri 5000)
-
 (detect-pose-larm)
 (send *hironxjsk* :stop-grasp :larm)
 (ir2ri-hand)
-
-;; reach tape
-(setq tape-msg (send (one-shot-subscribe "/tape_stand/pos" std_msgs::Float32MultiArray :timeout 2000) :data))
-(unix::sleep 2)
-
 (close-lhand-tape-before-offset)
+(unix::sleep 2)
 (setq *tape-coords* (send (make-coords) :locate (float-vector (* (elt tape-msg 0) 1000) (* (elt tape-msg 1) 1000) (* (elt tape-msg 2) 1000)) :world))
-(send *left-target-arrow* :move-to (send (send (send (send *tape-coords* :copy-worldcoords) :rotate pi/2 :z) :rotate -pi/2 :x) :translate #f(-100 20 -30) :world) :world)
+(send *left-target-arrow* :move-to (send (send (send (send *tape-coords* :copy-worldcoords) :rotate pi/2 :z) :rotate -pi/2 :x) :translate #f(-100 30 -30) :world) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-
-(send *left-target-arrow* :translate #f(70 0 0) :world)
+(send *left-target-arrow* :translate #f(60 0 0) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-
 (close-lhand-tape-before)
 (unix::sleep 3)
-
-;; angle-vector-sequence. box-edge is x:0.65 y:0.21 z:45.7
 (setq tape-stand-edge (make-coords))
 (send tape-stand-edge :locate (float-vector 635 (elt (send (send *hironxjsk* :larm :end-coords) :worldpos) 1) (elt (send (send *hironxjsk* :larm :end-coords :copy-worldcoords) :worldpos) 2)) :world)
 (setq tape-len (- (elt (send (send tape-stand-edge :copy-worldcoords) :worldpos) 0) (elt (send (send *hironxjsk* :larm :end-coords) :worldpos) 0)))
 (setq avs nil)
 (dotimes (theta 60)
-  (send *left-target-arrow* :move-to (send (send *hironxjsk* :larm :end-coords :copy-worldcoords) :locate (send (send (send tape-stand-edge :copy-worldcoords) :translate (float-vector (- (* tape-len (cos (deg2rad theta)))) 0 (* tape-len (sin (deg2rad theta)))) :world) :pos) :world) :world)
+  (send *left-target-arrow* :move-to (send (send *hironxjsk* :larm :end-coords :copy-worldcoords) :locate (send (send (send tape-stand-edge :copy-worldcoords) :translate (float-vector (-(* tape-len (cos (deg2rad theta)))) 0 (* tape-len (sin (deg2rad theta)))) :world) :pos) :world) :world)
   (solve-ik-larm *left-target-arrow*)
   (push (send *hironxjsk* :angle-vector) avs)
   (send *irtviewer* :draw-objects))
 (setq avs (reverse avs))
 (send *ri* :angle-vector-sequence avs 50)
 (send *ri* :wait-interpolation)
-(unix::sleep 1)
-
+(unix::sleep 4)
 (close-lhand-tape-after)
-(unix::sleep 2)
-
+(unix::sleep 3)
 (send *left-target-arrow* :translate #f(-100 0 100) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-;; (send *hironxjsk* :larm :wrist-r :joint-angle -90)
 
-;; (send *left-target-arrow* :move-to (send (send (send (make-coords) :locate (send (send (send *target-bbox* :copy-worldcoords) :translate #f(0 50 200) :world) :pos) :world) :rotate (deg2rad 0) :x) :rotate pi :z) :world)
-;; (send *left-target-arrow* :rotate (deg2rad 30) :x)
-(send *ri* :call-operation-return :collisiondetectorservice_settolerance :link_pair_name "RARM_JOINT5:LARM_JOINT5" :tolerance -0.01)
+(send *ri* :call-operation-return :collisiondetectorservice_settolerance :link_pair_name "RARM_JOINT5:LARM_JOINT5" :tolerance -0.011)
 
-(send *left-target-arrow* :move-to (send (send (make-coords) :locate (send (Send (send *target-bbox* :copy-worldcoords) :translate #f(-30 -15 100) :world) :pos) :world) :rotate (deg2rad 90) :z) :world)
+;; (send *left-target-arrow* :move-to (send (send (make-coords) :locate (send (Send (send *target-bbox* :copy-worldcoords) :translate #f(-30 -5 80) :world) :pos) :world) :rotate (deg2rad 90) :z) :world)
+(send *left-target-arrow* :move-to (send (send (make-coords) :locate (send (send (send *hironxjsk* :rarm :end-coords :copy-worldcoords) :translate #f(-20 70 0) :world) :worldpos) :world) :rotate pi/2 :z) :world)
 (send *left-target-arrow* :rotate (deg2rad -45) :x)
-;; (send *left-target-arrow* :move-to (send (send (make-coords) :locate (send (send (send *target-bbox* :copy-worldcoords) :translate #f(0 30 100) :world) :pos) :world) :rotate (deg2rad -45) :x) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-
-(force-move :larm :z "minux" 3 1)
+(force-move :larm :z "minux" 3 2)
 (send *left-target-arrow* :move-to (send *hironxjsk* :larm :end-coords :copy-worldcoords) :world)
 
 ;; rotate larm
@@ -430,58 +396,47 @@
 (send *left-target-arrow* :translate #f(0 0 15) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri 5000)
-
 (open-lhand-tape-1)
-
+(unix::sleep 2)
 (send *left-target-arrow* :rotate (deg2rad 10) :x)
 (send *left-target-arrow* :translate #f(0 0 5) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri 5000)
-
 (send *left-target-arrow* :rotate (deg2rad 10) :x)
 (send *left-target-arrow* :translate #f(0 0 5) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-
 (send *left-target-arrow* :rotate (deg2rad 10) :x)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-
 (send *left-target-arrow* :rotate (deg2rad 10) :x)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-
 (open-lhand-tape)
-
+(unix::sleep 2)
 (send *left-target-arrow* :translate #f(0 0 5) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-
+;; remove rarm
+(send *right-target-arrow* :translate #f(0 0 10) :world)
+(solve-ik-rarm *right-target-arrow*)
+(ir2ri)
+(send *right-target-arrow* :translate #f(0 -50 0) :world)
+(solve-ik-rarm *right-target-arrow*)
+(ir2ri)
+(detect-pose-rarm)
+(send *hironxjsk* :stop-grasp :rarm)
+(ir2ri-hand)
+(send *ri* :call-operation-return :collisiondetectorservice_settolerance :link_pair_name "RARM_JOINT5:LARM_JOINT5" :tolerance 0)
+;; secure tape
 (send *left-target-arrow* :translate #f(70 0 0) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
-
 (send *left-target-arrow* :translate #f(0 0 100) :world)
 (solve-ik-larm *left-target-arrow*)
 (ir2ri)
+(detect-pose)
 
-;; (send *left-target-arrow* :rotate (deg2rad 10) :x)
-;; (solve-ik-larm *left-target-arrow*)
-;; (ir2ri)
-
-;; (open-lhand-tape-2nd)
-
-;; (send *right-target-arrow* :translate #f(0 0 20) :world)
-;; (solve-ik-rarm *right-target-arrow*)
-
-;; (send *right-target-arrow* :translate #f(0 -100 0) :world)
-;; (solve-ik-rarm *right-target-arrow*)
-
-;; (detect-pose-rarm)
-
-(send *ri* :call-operation-return :collisiondetectorservice_settolerance :link_pair_name "RARM_JOINT5:LARM_JOINT5" :tolerance 0)
-
-;; scrape
 ;; memo
 (setq memo (send *hironxjsk* :rarm :end-coords :copy-worldcoords))
 (close-rhand-finish-fold-2nd)
