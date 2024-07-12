@@ -28,7 +28,7 @@
       <remap from="~server" to="transformable_interactive_server_$(arg camera_type)" />
       <rosparam subst_value="true">
         config_file: $(find wrapping_melodic)/config/hiro/workspace_transformable_markers_client_copy.yaml
-        config_auto_save: true
+        config_auto_save: false
         interactive_mode: 2  # BUTTON
       </rosparam>
     </node>

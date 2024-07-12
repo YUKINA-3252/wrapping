@@ -148,7 +148,7 @@ def natural_keys (text):
 
 
 if __name__ == "__main__":
-    directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/tmp"
+    directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/cylinder_test"
 
     if "merge.pcd" in os.listdir(directory_path):
         pass
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     table_normal_vector = []
     pcd = pcd_merge
     while (True):
-        plane_model, inlier = pcd.segment_plane(distance_threshold=0.003, ransac_n=3, num_iterations=1000)
+        plane_model, inlier = pcd.segment_plane(distance_threshold=0.003, ransac_n=2, num_iterations=1000)
         inlier_cloud = pcd.select_by_index(inlier)
         face_normal_vector = normalize_vector(np.asarray([plane_model[0], plane_model[1], plane_model[2]]))
         # determine table

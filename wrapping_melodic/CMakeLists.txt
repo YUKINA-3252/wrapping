@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   std_msgs
+  std_srvs
   catkin_virtualenv
   message_generation
   )
@@ -63,6 +64,7 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
+  PaperEdgeNormalService.srv
   PointCloudAverage.srv
   PointCloudAverageSecond.srv
 )
@@ -151,9 +153,11 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(detect_tape src/detect_tape.cpp)
 add_executable(detect_hsi src/detect_hsi.cpp)
+add_executable(hsi_xyz src/hsi_xyz.cpp)
 # target_link_libraries(detect_tape ${PCL_LIBRARIES})
 target_link_libraries(detect_tape ${catkin_LIBRARIES})
 target_link_libraries(detect_hsi ${catkin_LIBRARIES})
+target_link_libraries(hsi_xyz ${catkin_LIBRARIES})
 
 
 ## Rename C++ executable without prefix

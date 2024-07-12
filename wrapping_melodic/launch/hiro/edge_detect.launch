@@ -15,56 +15,65 @@
     <remap from="~input/depth" to="$(arg input_depth_image)" />
     <remap from="~input/camera_info" to="$(arg input_camera_info)" />
     <rosparam>
-      area_tolerance: 0.4
+      area_tolerance: 0.1
       approximate_sync: true
       length_tolerance: 0.2
-      rect_x: 0.2
+      rect_x: 0.3
       rect_y: 0.6
       width_depth: true
     </rosparam>
   </node>
 
-  <!-- paper edge -->
-  <node name="edge_finder_paper"
-        pkg="jsk_perception" type="edge_finder.py"
-        output="screen" >
-    <remap from="~input" to="$(arg input_image)" />
-    <remap from="~input/depth" to="$(arg input_depth_image)" />
-    <remap from="~input/camera_info" to="$(arg input_camera_info)" />
-    <rosparam>
-      approximate_sync: true
-      length_tolerance: 0.1
-      ps_list_a_x: 0.52
-      ps_list_a_y: -0.035
-      ps_list_a_z: 0.046
-      ps_list_b_x: 0.38
-      ps_list_b_y: -0.035
-      ps_list_b_z: 0.046
-      target_frame: "/WAIST"
-      width_depth: true
-    </rosparam>
-  </node>
-  <!-- box edge -->
-  <node name="edge_finder_box"
-        pkg="jsk_perception" type="edge_finder.py"
-        output="screen" >
-    <remap from="~input" to="$(arg input_image)" />
-    <remap from="~input/depth" to="$(arg input_depth_image)" />
-    <remap from="~input/camera_info" to="$(arg input_camera_info)" />
-    <rosparam>
-      approximate_sync: true
-      length_tolerance: 0.1
-      ps_list_a_x: 0.52
-      ps_list_a_y: 0.065
-      ps_list_a_z: 0.046
-      ps_list_b_x: 0.38
-      ps_list_b_y: 0.065
-      ps_list_b_z: 0.046
-      box_len_x: 0.14
-      target_frame: "/WAIST"
-      width_depth: true
-    </rosparam>
-  </node>
+  <!-- <!-\- paper edge -\-> -->
+  <!-- <node name="edge_finder_paper" -->
+  <!--       pkg="jsk_perception" type="edge_finder.py" -->
+  <!--       output="screen" > -->
+  <!--   <remap from="~input" to="$(arg input_image)" /> -->
+  <!--   <remap from="~input/depth" to="$(arg input_depth_image)" /> -->
+  <!--   <remap from="~input/camera_info" to="$(arg input_camera_info)" /> -->
+  <!--   <rosparam> -->
+  <!--     approximate_sync: true -->
+  <!--     length_tolerance: 0.1 -->
+  <!--     <!-\- box -\-> -->
+  <!--     <!-\- ps_list_a_x: 0.52 -\-> -->
+  <!--     <!-\- ps_list_a_y: -0.035 -\-> -->
+  <!--     <!-\- ps_list_a_z: 0.046 -\-> -->
+  <!--     <!-\- ps_list_b_x: 0.38 -\-> -->
+  <!--     <!-\- ps_list_b_y: -0.035 -\-> -->
+  <!--     <!-\- ps_list_b_z: 0.046 -\-> -->
+  <!--     <!-\- cylinder -\-> -->
+  <!--     ps_list_a_x: 0.52 -->
+  <!--     ps_list_a_y: 0.05 -->
+  <!--     ps_list_a_z: 0.1 -->
+  <!--     ps_list_b_x: 0.38 -->
+  <!--     ps_list_b_y: 0.05 -->
+  <!--     ps_list_b_z: 0.1 -->
+  <!--     source_frame: "/head_camera_rgb_optical_frame" -->
+  <!--     target_frame: "/WAIST" -->
+  <!--     width_depth: true -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
+  <!-- <!-\- box edge -\-> -->
+  <!-- <node name="edge_finder_box" -->
+  <!--       pkg="jsk_perception" type="edge_finder.py" -->
+  <!--       output="screen" > -->
+  <!--   <remap from="~input" to="$(arg input_image)" /> -->
+  <!--   <remap from="~input/depth" to="$(arg input_depth_image)" /> -->
+  <!--   <remap from="~input/camera_info" to="$(arg input_camera_info)" /> -->
+  <!--   <rosparam> -->
+  <!--     approximate_sync: true -->
+  <!--     length_tolerance: 0.1 -->
+  <!--     ps_list_a_x: 0.52 -->
+  <!--     ps_list_a_y: 0.065 -->
+  <!--     ps_list_a_z: 0.046 -->
+  <!--     ps_list_b_x: 0.38 -->
+  <!--     ps_list_b_y: 0.065 -->
+  <!--     ps_list_b_z: 0.046 -->
+  <!--     box_len_x: 0.14 -->
+  <!--     target_frame: "/WAIST" -->
+  <!--     width_depth: true -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
 
   <group ns="paper_finder" >
     <node name="republish"
@@ -75,23 +84,23 @@
     </node>
   </group>
 
-  <group ns="edge_finder_paper" >
-    <node name="republish"
-          pkg="image_transport" type="republish"
-          args="raw compressed">
-      <remap from="in" to="output/viz" />
-      <remap from="out" to="output/viz" />
-    </node>
-  </group>
+  <!-- <group ns="edge_finder_paper" > -->
+  <!--   <node name="republish" -->
+  <!--         pkg="image_transport" type="republish" -->
+  <!--         args="raw compressed"> -->
+  <!--     <remap from="in" to="output/viz" /> -->
+  <!--     <remap from="out" to="output/viz" /> -->
+  <!--   </node> -->
+  <!-- </group> -->
 
-  <group ns="edge_finder_box" >
-    <node name="republish"
-          pkg="image_transport" type="republish"
-          args="raw compressed">
-      <remap from="in" to="output/viz" />
-      <remap from="out" to="output/viz" />
-    </node>
-  </group>
+  <!-- <group ns="edge_finder_box" > -->
+  <!--   <node name="republish" -->
+  <!--         pkg="image_transport" type="republish" -->
+  <!--         args="raw compressed"> -->
+  <!--     <remap from="in" to="output/viz" /> -->
+  <!--     <remap from="out" to="output/viz" /> -->
+  <!--   </node> -->
+  <!-- </group> -->
 
   <!-- publish marker array -->
   <node name="box_marker_array_publisher" type="marker_array_pub.py" pkg="wrapping_melodic" output="screen" >

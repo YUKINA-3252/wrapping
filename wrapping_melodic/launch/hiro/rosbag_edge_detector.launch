@@ -1,0 +1,74 @@
+<launch>
+  <arg name="input_camera_info" value="/head_camera/depth/camera_info" />
+  <arg name="input_rgb_image" value="/head_camera/rgb/image_raw" />
+  <arg name="input_image" value="/head_camera/depth/image_raw" />
+
+  <arg name="box_len_x" default="0.14" />
+  <arg name="box_len_y" default="0.2" />
+  <arg name="box_len_z" default="0.12" />
+
+  <!-- paper edge -->
+  <node name="edge_finder_paper"
+        pkg="jsk_perception" type="edge_finder.py"
+        output="screen" >
+    <remap from="~input" to="$(arg input_rgb_image)" />
+    <remap from="~input/depth" to="$(arg input_image)" />
+    <remap from="~input/camera_info" to="$(arg input_camera_info)" />
+    <rosparam>
+      approximate_sync: true
+      length_tolerance: 0.1
+      <!-- ps_list_a_x: 0.52 -->
+      <!-- ps_list_a_y: -0.035 -->
+      <!-- ps_list_a_z: 0.046 -->
+      <!-- ps_list_b_x: 0.38 -->
+      <!-- ps_list_b_y: -0.035 -->
+      <!-- ps_list_b_z: 0.046 -->
+      ps_list_a_x: 0.53
+      ps_list_a_y: -0.02
+      ps_list_a_z: 0.11
+      ps_list_b_x: 0.33
+      ps_list_b_y: -0.02
+      ps_list_b_z: 0.11
+      source_frame: "/head_camera_rgb_optical_frame"
+      target_frame: "/WAIST"
+      width_depth: true
+    </rosparam>
+  </node>
+  <!-- box edge -->
+  <node name="edge_finder_box"
+        pkg="jsk_perception" type="edge_finder.py"
+        output="screen" >
+    <remap from="~input" to="$(arg input_rgb_image)" />
+    <remap from="~input/depth" to="$(arg input_image)" />
+    <remap from="~input/camera_info" to="$(arg input_camera_info)" />
+    <rosparam>
+      approximate_sync: true
+      length_tolerance: 0.1
+      <!-- ps_list_a_x: 0.52 -->
+      <!-- ps_list_a_y: 0.065 -->
+      <!-- ps_list_a_z: 0.046 -->
+      <!-- ps_list_b_x: 0.38 -->
+      <!-- ps_list_b_y: 0.065 -->
+      <!-- ps_list_b_z: 0.046 -->
+      ps_list_a_x: 0.51
+      ps_list_a_y: 0.22
+      ps_list_a_z: -0.05
+      ps_list_b_x: 0.36
+      ps_list_b_y: 0.22
+      ps_list_b_z: -0.05
+      box_len_x: 0.14
+      source_frame: "/head_camera_rgb_optical_frame"
+      target_frame: "/WAIST"
+      width_depth: true
+    </rosparam>
+  </node>
+
+  <!-- publish marker array -->
+  <node name="box_marker_array_publisher" type="marker_array_pub.py" pkg="wrapping_melodic" output="screen" >
+    <param name="~box_z_coord" value="0.04"/>
+    <param name="~box_len_x" value="$(arg box_len_x)"/>
+    <param name="~box_len_y" value="$(arg box_len_y)"/>
+    <param name="~box_len_z" value="$(arg box_len_z)"/>
+  </node>
+
+</launch>

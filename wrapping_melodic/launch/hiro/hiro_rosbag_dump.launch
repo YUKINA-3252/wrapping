@@ -1,0 +1,7 @@
+<launch>
+  <arg name="rosbag" />
+  <node pkg="rosbag" type="play" name="rosbag" args="$(arg rosbag)" />
+  <node name="extract" pkg="image_view" type="extract_images" respawn="false" output="screen" cwd="ROS_HOME">
+    <remap from="image" to="/head_camera/rgb/image_raw" />
+  </node>
+</launch>

@@ -1,0 +1,122 @@
+<launch>
+  <arg name="input_image" default="" />
+  <arg name="input_cloud" default="" />
+  <arg name="manager" default="" />
+  <arg name="camera_frame_id" default="" />
+
+  <!-- tabletop object detector -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
+    <arg name="input_cloud" default="$(arg input_cloud)" />
+    <arg name="identify_name" default="tabletop_object_detector" />
+    <arg name="manager"  value="$(arg manager)" />
+  </include>
+
+  <node name="multi_plane_estimate_tabletop_object_detector" pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)"
+        output="screen" >
+    <remap from="~input" to="bbox_cloud_extract_tabletop_object_detector/output" />
+   <rosparam>
+      max_curvature: 0.01
+      estimate_normal: true
+      min_size: 2000
+    </rosparam>
+  </node>
+
+  <node name="polygon_magnifier_tabletop_object_detector" pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/PolygonMagnifier $(arg manager)"
+        output="screen" >
+    <remap from="~input" to="multi_plane_estimate_tabletop_object_detector/output_refined_polygon" />
+  </node>
+
+  <node name="plane_extraction_tabletop_object_detector" pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/MultiPlaneExtraction $(arg manager)"
+        output="screen" >
+    <remap from="~input" to="bbox_cloud_extract_tabletop_object_detector/output" />
+    <remap from="~indices" to="multi_plane_estimate_tabletop_object_detector/output_refined" />
+    <remap from="~input_polygons" to="multi_plane_estimate_tabletop_object_detector/output_refined_polygon" />
+    <remap from="~input_coefficients" to="multi_plane_estimate_tabletop_object_detector/output_refined_coefficients" />
+    <rosparam subst_value="true">
+      use_indices: true
+      use_sensor_frame: true
+      sensor_frame: /$(arg camera_frame_id)
+      min_height: 0.01
+      max_height: 1000.0
+      use_async: true
+      max_queue_size: 300
+    </rosparam>
+  </node>
+
+  <node name="euclidean_clustering_tabletop_object_detector" pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/EuclideanClustering $(arg manager)"
+        output="screen">
+    <remap from="~input" to="plane_extraction_tabletop_object_detector/output_nonplane_cloud" />
+    <rosparam>
+      tolerance: 0.02
+      min_size: 100
+      downsample_enable: true
+      leaf_size: 0.01
+    </rosparam>
+  </node>
+
+  <node name="throttle_segmentation_tabletop_object_detector" pkg="nodelet" type="nodelet"
+        args="load jsk_topic_tools/LightweightThrottle $(arg manager)"
+        output="screen">
+    <remap from="~input" to="euclidean_clustering_tabletop_object_detector/output" />
+    <remap from="~output" to="euclidean_clustering_tabletop_object_detector/output_throttle" />
+  </node>
+
+  <node name="segmentation_decomposer_tabletop_object_detector" pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)"
+        output="screen" >
+    <remap from="~input" to="plane_extraction_tabletop_object_detector/output" />
+    <remap from="~target" to="euclidean_clustering_tabletop_object_detector/output_throttle" />
+    <remap from="~align_planes" to="multi_plane_estimate_tabletop_object_detector/output_refined_polygon" />
+    <remap from="~align_planes_coefficients"
+           to="multi_plane_estimate_tabletop_object_detector/output_refined_coefficients" />
+    <rosparam subst_value="true">
+      align_boxes: true
+      align_boxes_with_plane: false
+      <!-- target_frame_id: BASE_TOP -->
+      target_frame_id: BASE_TOP
+      use_pca: true
+      sort_by: cloud_size
+      publish_clouds: false
+      publish_tf: true
+      approximate_sync: true
+      queue_size: 300
+    </rosparam>
+  </node>
+
+  <node name="tabletop_outlier_removal_tabletop_object_detector"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/OrganizedStatisticalOutlierRemoval $(arg manager)">
+    <remap from="~input" to="plane_extraction_tabletop_object_detector/output" />
+    <remap from="~input/cluster_indices" to="euclidean_clustering_tabletop_object_detector/output" />
+    <rosparam>
+      mean_k: 30
+      stddev: 0.4
+      keep_organized: true
+      use_cluster_point_indices: true
+      approximate_sync: true
+    </rosparam>
+  </node>
+
+  <node name="tabletop_cpi_decomposer_tabletop_object_detector"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)">
+    <remap from="~input" to="tabletop_outlier_removal_tabletop_object_detector/output" />
+    <remap from="~target" to="euclidean_clustering_tabletop_object_detector/output" />
+    <rosparam>
+      align_boxes: true
+      align_boxes_with_plane: false
+      <!-- target_frame_id: BASE_TOP -->
+      target_frame_id: BASE_TOP
+      use_pca: true
+      sort_by: cloud_size
+      publish_clouds: false
+      publish_tf: true
+      approximate_sync: true
+      queue_size: 300
+    </rosparam>
+  </node>
+</launch>

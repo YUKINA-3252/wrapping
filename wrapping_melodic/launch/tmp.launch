@@ -1,0 +1,114 @@
+<launch>
+
+  <!-- start up empty world -->
+  <arg name="extra_gazebo_args" default=""/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false" />
+  <arg name="debug" default="false" />
+  <arg name="paused" default="true"/>
+  <arg name="verbose" default="false"/>
+  <arg name="physics" default="ode"/>
+  <!-- TODO: throttled not implemented in gazebo_ros/empty_world.launch
+  <arg name="throttled" default="false"/>
+  -->
+  <arg name="world_name" default="worlds/empty.world"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
+
+  <arg name="KINECT1" default="$(optenv KINECT1 false)" />
+  <arg name="KINECT2" default="$(optenv KINECT2 false)" />
+
+  <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch"> -->
+  <!--   <arg name="gui" value="$(arg gui)" /> -->
+  <!--   <arg name="headless" value="$(arg headless)" /> -->
+  <!--   <arg name="paused" value="$(arg paused)" /> -->
+  <!--   <arg name="debug" value="$(arg debug)" /> -->
+  <!--   <arg name="use_sim_time" value="true" /> -->
+  <!--   <!-\- TODO: throttled not implemented in gazebo_ros/empty_world.launch -->
+  <!--   <arg name="throttled" value="$(arg throttled)" /> -->
+  <!--   -\-> -->
+  <!--   <arg name="world_name" value="$(arg world_name)"/> -->
+  <!-- </include> -->
+
+
+  <!-- <!-\- start pr2 robot -\-> -->
+  <include file="$(find pr2_gazebo)/launch/pr2.launch">
+    <arg name="KINECT1" value="$(arg KINECT1)" />
+    <arg name="KINECT2" value="$(arg KINECT2)" />
+  </include>
+  <!-- start gazebo server-->
+    <arg unless="$(arg paused)" name="command_arg1" value=""/>
+  <arg     if="$(arg paused)" name="command_arg1" value="-u"/>
+  <arg unless="$(arg headless)" name="command_arg2" value=""/>
+  <arg     if="$(arg headless)" name="command_arg2" value="-r"/>
+  <arg unless="$(arg verbose)" name="command_arg3" value=""/>
+  <arg     if="$(arg verbose)" name="command_arg3" value="--verbose"/>
+  <arg unless="$(arg debug)" name="script_type" value="gzserver"/>
+  <arg     if="$(arg debug)" name="script_type" value="debug"/>
+
+  <!-- Base Control -->
+  <rosparam file="$(find pr2_controller_configuration_gazebo)/config/pr2_base_controller.yaml" command="load" />
+
+  <!-- Odometry -->
+  <rosparam file="$(find pr2_controller_configuration_gazebo)/config/pr2_odometry.yaml" command="load" />
+
+  <!-- Head -->
+  <rosparam command="load" file="$(find pr2_controller_configuration_gazebo)/config/pr2_head_controller.yaml" />
+  
+  <!-- Arms -->
+  <rosparam command="load" file="$(find pr2_controller_configuration_gazebo)/config/pr2_arm_controllers.yaml" />
+
+  <!-- Gripper -->
+  <rosparam command="load" file="$(find pr2_controller_configuration_gazebo)/config/pr2_gripper_controllers.yaml" />
+
+  <!-- Tilt Laser -->
+  <rosparam command="load" file="$(find pr2_controller_configuration_gazebo)/config/pr2_laser_tilt_controller.yaml" />
+
+  <!-- Torso -->
+  <rosparam command="load" file="$(find pr2_controller_configuration_gazebo)/config/pr2_torso_controller.yaml" />
+
+  <!-- Controllers that come up started -->
+  <node name="default_controllers_spawner_action"
+        pkg="pr2_controller_manager" type="spawner" output="screen"
+        args="--wait-for=/calibrated base_controller_action base_odometry_action head_traj_controller_action laser_tilt_controller_action torso_controller_action r_gripper_controller_action l_gripper_controller_action r_arm_controller_action l_arm_controller_action" />
+
+  <!-- Nodes on top of the controllers -->
+  <group ns="r_gripper_controller_action">
+    <node name="gripper_action_node"
+          pkg="pr2_gripper_action" type="pr2_gripper_action">
+      <!-- needed for stall detection in simulation with joint "jitter" -->
+      <param name="stall_velocity_threshold" value="0.33" type="double"/>
+      <param name="stall_timeout" value="0.5" type="double"/>
+    </node>
+  </group>
+  <group ns="l_gripper_controller_action">
+    <node name="gripper_action_node"
+          pkg="pr2_gripper_action" type="pr2_gripper_action">
+      <!-- needed for stall detection in simulation with joint "jitter" -->
+      <param name="stall_velocity_threshold" value="0.33" type="double"/>
+      <param name="stall_timeout" value="0.5" type="double"/>
+    </node>
+  </group>
+  <group ns="head_traj_controller_action">
+    <node name="point_head_action"
+          pkg="pr2_head_action" type="pr2_head_action" />
+  </group>
+  <group ns="torso_controller_action">
+    <node name="position_joint_action_node"
+          pkg="single_joint_position_action" type="single_joint_position_action" />
+  </group>
+
+
+    <node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="false" output="screen"
+	args="$(arg command_arg1) $(arg command_arg2) $(arg command_arg3) -e $(arg physics) $(arg extra_gazebo_args) $(arg world_name)" >
+
+    <remap from="rarm_controller/follow_joint_trajectory" to="rarm_controller/follow_joint_trajectory_action" />
+    <remap from="larm_controller/follow_joint_trajectory" to="larm_controller/follow_joint_trajectory_action" />
+    <remap from="head_controller/follow_joint_trajectory" to="head_controller/follow_joint_trajectory_action" />
+    <remap from="torso_controller/follow_joint_trajectory" to="torso_controller/follow_joint_trajectory_action" />
+  </node>
+  <!-- start gazebo client -->
+  <group if="$(arg gui)">
+    <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" respawn="false" output="screen"/>
+  </group>
+
+
+</launch>

@@ -1,0 +1,4 @@
+# PaperEdgeNormalService.srv
+
+float32[] paper_edge_coords
+---

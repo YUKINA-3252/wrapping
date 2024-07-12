@@ -82,6 +82,14 @@
       target_frame_id: WAIST
     </rosparam>
   </node>
+  <!-- transform head point cloud -->
+  <node name="head_camera_remote_tf_transform_cloud" pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/TfTransformCloud $(arg manager)" output="screen" >
+    <remap from="~input" to="/bbox_cloud_extract_head_remote_attention_clipper/output"/>
+    <rosparam>
+      target_frame_id: WAIST
+    </rosparam>
+  </node>
 
   <!-- <node name="pointcloud_to_pcd_rhand_back" type="nodelet" pkg="nodelet" -->
   <!--       args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" > -->

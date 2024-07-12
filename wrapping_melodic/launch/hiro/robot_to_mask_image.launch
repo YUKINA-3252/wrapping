@@ -1,0 +1,23 @@
+<launch>
+  <!-- Launching robot_to_mask_image launch -->
+  <arg name="MASK_INPUT_CAMERA_INFO" value="/head_camera/rgb/camera_info" />
+  <node name="robot_to_mask_image" type="nodelet" pkg="nodelet"
+        args="standalone jsk_perception/RobotToMaskImage" output="screen" >
+    <remap from="~input/camera_info" to="$(arg MASK_INPUT_CAMERA_INFO)"/>
+    <rosparam>
+      self_see_links:
+        - name: BASE_TOP
+      <!-- - name: odom -->
+      <!-- - name: RARM_JOINT0_Link -->
+      <!-- - name: RARM_JOINT1_Link -->
+      <!-- - name: RARM_JOINT2_Link -->
+      <!-- - name: RARM_JOINT3_Link -->
+      <!-- - name: RARM_JOINT4_Link -->
+        - name: RARM_JOINT5_Link
+      <!-- - name: RHAND_JOINT0_Link -->
+      <!-- - name: RHAND_JOINT1_Link -->
+      <!-- - name: RHAND_JHOINT2_Link -->
+      <!-- - name: RHAND_JOINT3_Link -->
+    </rosparam>
+  </node>
+</launch>

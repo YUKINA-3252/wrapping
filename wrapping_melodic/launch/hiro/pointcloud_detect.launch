@@ -20,6 +20,17 @@
     </rosparam>
   </node>
 
+  <node name="pointcloud_to_pcd_head" type="nodelet" pkg="nodelet"
+        args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" >
+    <remap from="~input" to="/head_camera_remote_tf_transform_cloud/output" />
+    <rosparam subst_value="true">
+      prefix: $(find wrapping_melodic)/save_pcd/
+      duration: 0.0
+      binary: false
+      compressed: false
+    </rosparam>
+  </node>
+
   <!-- tape stand -->
   <include file="$(find wrapping_melodic)/launch/hiro/extract_save_average_pcl.launch">
     <arg name="average_point_cloud_topic_name" value="/tape_stand/pos" />

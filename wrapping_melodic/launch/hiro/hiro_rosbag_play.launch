@@ -44,7 +44,7 @@
   <!-- </node> -->
 
   <node name="$(anon rviz)" pkg="rviz" type="rviz"
-        args="-d $(find wrapping_melodic)/rvizconfig/hiro.rviz"
+        args="-d $(find wrapping_melodic)/rvizconfig/hiro_rosbag.rviz"
         if="$(arg gui)" />
 
   <arg name="input_camera_info" value="/head_camera/depth/camera_info" />
@@ -54,14 +54,9 @@
   <arg name="box_len_x" default="0.14" />
   <arg name="box_len_y" default="0.2" />
   <arg name="box_len_z" default="0.12" />
-
-  <!-- <!-\- tabletop_object_detector -\-> -->
-  <!-- <include file="$(find wrapping_melodic)/launch/hiro/rosbag_tabletop_object_detector.launch"> -->
-  <!--   <arg name="input_image" value="/head_camera/depth/image_raw" /> -->
-  <!--   <arg name="input_cloud" value="/head_camera/depth_registered/points" /> -->
-  <!--   <arg name="manager" value="rosbag_manager" /> -->
-  <!--   <arg name="camera_frame_id" value="head_camera_rgb_optical_frame" /> -->
-  <!-- </include> -->
+  <arg name="paper_len_x" default="0.175" />
+  <arg name="paper_len_y" default="0.6" />
+  <arg name="paper_len_z" default="0.001" />
 
   <!-- publish box array -->
   <node name="default_box_marker_array_publisher" type="rosbag_box_marker.py" pkg="wrapping_melodic" output="screen" >
@@ -72,6 +67,16 @@
     <param name="~box_len_y" value="$(arg box_len_y)"/>
     <param name="~box_len_z" value="$(arg box_len_z)"/>
   </node>
+  <!-- publish box array -->
+  <node name="default_paper_marker_array_publisher" type="rosbag_paper_marker.py" pkg="wrapping_melodic" output="screen" >
+    <param name="~paper_x_coord" value="0.45"/>
+    <param name="~paper_y_coord" value="-0.034" />
+    <param name="~paper_z_coord" value="-0.08"/>
+    <param name="~paper_len_x" value="$(arg paper_len_x)"/>
+    <param name="~paper_len_y" value="$(arg paper_len_y)"/>
+    <param name="~paper_len_z" value="$(arg paper_len_z)"/>
+  </node>
+
 
   <!-- attention clipper to /head_camera/depth_registered/points -->
   <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
@@ -79,11 +84,37 @@
     <arg name="identify_name" default="head_attention_clipper" />
     <arg name="manager"  value="$(arg manager)" />
   </include>
+  <!-- attention clipper for tape -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
+    <arg name="input_cloud" default="/hsi_color_filter_tape/output" />
+    <arg name="identify_name" default="tape_stand" />
+    <arg name="manager"  value="$(arg manager)" />
+  </include>
+
+  <!-- save pcd -->
+  <!-- transform head point cloud -->
+  <node name="head_camera_tf_transform_cloud" pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/TfTransformCloud $(arg manager)" output="screen" >
+    <remap from="~input" to="/bbox_cloud_extract_head_attention_clipper/output"/>
+    <rosparam>
+      target_frame_id: WAIST
+    </rosparam>
+  </node>
+  <node name="pointcloud_to_pcd_head" type="nodelet" pkg="nodelet"
+        args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" >
+    <remap from="~input" to="/head_camera_tf_transform_cloud/output" />
+    <rosparam subst_value="true">
+      prefix: $(find wrapping_melodic)/save_pcd/
+      duration: 0.0
+      binary: false
+      compressed: false
+    </rosparam>
+  </node>
 
   <!-- hsi color filter for paper-->
   <node name="hsi_color_filter_paper" type="nodelet" pkg="nodelet"
         args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" >
-    <remap from="~input" to="/bbox_cloud_extract_head_attention_clipper/output" />
+    <remap from="~input" to="/head_camera_tf_transform_cloud/output" />
     <rosparam>
       h_limit_min: 15
       s_limit_min: 25
@@ -96,7 +127,7 @@
    <!-- hsi color filter for tape-->
   <node name="hsi_color_filter_tape" type="nodelet" pkg="nodelet"
         args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" >
-    <remap from="~input" to="/head_camera/depth_registered/points" />
+    <remap from="~input" to="/head_camera_tf_transform_cloud/output" />
     <rosparam>
       h_limit_min: -81
       s_limit_min: 43
@@ -118,15 +149,25 @@
     <arg name="manager"  value="$(arg manager)" />
   </include>
 
-  <!-- hsi average pointcloud -->
-  <node name="box_top_paper" type="detect_hsi" pkg="wrapping_melodic" output="screen" >
-    <param name="extract_point_cloud_topic" value="/hsi_color_filter_paper/output"/>
-    <param name="average_coord_topic" value="/box_top_paper/average_coord_topic" />
-    <param name="x_coord_min" type="double" value="0.38" />
-    <param name="x_coord_max" type="double" value="0.52" />
-    <param name="y_coord_min" type="double" value="-0.135" />
-    <param name="y_coord_max" type="double" value="-0.035" />
-    <param name="publish_pcl_topic" value="/box_top_paper/points" />
-  </node>
+  <!-- box top right point cloud -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
+    <arg name="input_cloud" default="/hsi_color_filter_paper/output" />
+    <arg name="identify_name" default="box_top_right" />
+    <arg name="manager"  value="$(arg manager)" />
+  </include>
+
+  <!-- box top point cloud -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
+    <arg name="input_cloud" default="/hsi_color_filter_tape/output" />
+    <arg name="identify_name" default="box_top" />
+    <arg name="manager"  value="$(arg manager)" />
+  </include>
+
+  <!-- left hand tape point cloud -->
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
+    <arg name="input_cloud" default="/hsi_color_filter_tape/output" />
+    <arg name="identify_name" default="left_hand_tape" />
+    <arg name="manager"  value="$(arg manager)" />
+  </include>
 
 </launch>

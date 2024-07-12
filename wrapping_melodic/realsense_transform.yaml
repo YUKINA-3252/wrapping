@@ -1,0 +1,16 @@
+boxes:
+- dimensions:
+  - 0.3
+  - 0.4
+  - 0.2
+  frame_id: WAIST
+  name: workspace
+  orientation:
+  - 0.0
+  - 0.0
+  - 0.0
+  - 1.0
+  position:
+  - 0.4
+  - 0.0
+  - 0.0

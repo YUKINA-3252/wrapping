@@ -1,16 +1,6 @@
 boxes:
-- dimensions:
-  - 0.04
-  - 0.055
-  - 0.05
+- dimensions: [0.04, 0.055, 0.05]
   frame_id: WAIST
   name: tape_stand
-  orientation:
-  - 0.0
-  - 0.0
-  - 0.0
-  - 1.0
-  position:
-  - 0.57
-  - 0.24
-  - 0.04
+  orientation: [0.0, 0.0, 0.0, 1.0]
+  position: [0.57, 0.24, 0.04]
