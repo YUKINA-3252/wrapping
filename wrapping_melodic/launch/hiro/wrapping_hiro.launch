@@ -75,13 +75,13 @@
   </include>
 
   <!-- transform realsense point cloud -->
-  <node name="realsense_tf_transform_cloud" pkg="nodelet" type="nodelet"
-        args="load jsk_pcl_utils/TfTransformCloud $(arg manager)" output="screen" >
-    <remap from="~input" to="realsense_remote/depth_registered/points"/>
-    <rosparam>
-      target_frame_id: WAIST
-    </rosparam>
-  </node>
+  <!-- <node name="realsense_tf_transform_cloud" pkg="nodelet" type="nodelet" -->
+  <!--       args="load jsk_pcl_utils/TfTransformCloud $(arg manager)" output="screen" > -->
+  <!--   <remap from="~input" to="realsense_remote/depth_registered/points"/> -->
+  <!--   <rosparam> -->
+  <!--     target_frame_id: WAIST -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
   <!-- transform head point cloud -->
   <node name="head_camera_remote_tf_transform_cloud" pkg="nodelet" type="nodelet"
         args="load jsk_pcl_utils/TfTransformCloud $(arg manager)" output="screen" >
@@ -113,6 +113,17 @@
   <!--   </rosparam> -->
   <!-- </node> -->
 
+  <node name="pointcloud_to_pcd_eval" type="nodelet" pkg="nodelet"
+        args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" >
+    <remap from="~input" to="/bbox_cloud_extract_realsense_attention_clipper/output" />
+    <rosparam subst_value="true">
+      prefix: /home/iwata/wrapping_ws/src/wrapping/wrapping/data/syuron_ex_default_1/
+      duration: 0.0
+      binary: false
+      compressed: false
+    </rosparam>
+  </node>
+
   <!-- attention clipper to /head_camera_remote/depth_registered/points -->
   <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
     <arg name="input_cloud" default="$(arg CLOUD_HEAD)" />
@@ -124,32 +135,38 @@
     <arg name="identify_name" default="realsense_transform" />
     <arg name="manager"  value="$(arg manager)" />
   </include>
+  <include file="$(find wrapping_melodic)/launch/hiro/attention_clipper.launch">
+    <arg name="input_cloud" default="/realsense_remote/depth_registered/points" />
+    <arg name="identify_name" default="realsense_attention_clipper" />
+    <arg name="manager"  value="$(arg manager)" />
+  </include>
 
-  <!-- hsi color filter for tape-->
-  <node name="hsi_color_filter_tape" type="nodelet" pkg="nodelet"
-        args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" >
-    <remap from="~input" to="/head_camera_remote/depth_registered/points" />
-    <rosparam>
-      h_limit_min: -81
-      s_limit_min: 43
-      i_limit_min: 88
-      h_limit_max: -31
-      s_limit_max: 67
-      i_limit_max: 162
-    </rosparam>
-  </node>
-  <!-- hsi color filter for paper-->
-  <node name="hsi_color_filter_paper" type="nodelet" pkg="nodelet"
-        args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" >
-    <remap from="~input" to="/bbox_cloud_extract_head_remote_attention_clipper/output" />
-    <rosparam>
-      h_limit_min: 15
-      s_limit_min: 25
-      i_limit_min: 100
-      h_limit_max: 74
-      s_limit_max: 100
-      i_limit_max: 150
-    </rosparam>
-  </node>
+
+  <!-- <!-\- hsi color filter for tape-\-> -->
+  <!-- <node name="hsi_color_filter_tape" type="nodelet" pkg="nodelet" -->
+  <!--       args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" > -->
+  <!--   <remap from="~input" to="/head_camera_remote/depth_registered/points" /> -->
+  <!--   <rosparam> -->
+  <!--     h_limit_min: -81 -->
+  <!--     s_limit_min: 43 -->
+  <!--     i_limit_min: 88 -->
+  <!--     h_limit_max: -31 -->
+  <!--     s_limit_max: 67 -->
+  <!--     i_limit_max: 162 -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
+  <!-- <!-\- hsi color filter for paper-\-> -->
+  <!-- <node name="hsi_color_filter_paper" type="nodelet" pkg="nodelet" -->
+  <!--       args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen" > -->
+  <!--   <remap from="~input" to="/bbox_cloud_extract_head_remote_attention_clipper/output" /> -->
+  <!--   <rosparam> -->
+  <!--     h_limit_min: 15 -->
+  <!--     s_limit_min: 25 -->
+  <!--     i_limit_min: 100 -->
+  <!--     h_limit_max: 74 -->
+  <!--     s_limit_max: 100 -->
+  <!--     i_limit_max: 150 -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
 
 </launch>

@@ -20,59 +20,59 @@
     </rosparam>
   </node>
 
-  <node name="pointcloud_to_pcd_head" type="nodelet" pkg="nodelet"
-        args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" >
-    <remap from="~input" to="/head_camera_remote_tf_transform_cloud/output" />
-    <rosparam subst_value="true">
-      prefix: $(find wrapping_melodic)/save_pcd/
-      duration: 0.0
-      binary: false
-      compressed: false
-    </rosparam>
-  </node>
+  <!-- <node name="pointcloud_to_pcd_head" type="nodelet" pkg="nodelet" -->
+  <!--       args="load jsk_pcl_utils/PointCloudToPCD $(arg manager)" output="screen" > -->
+  <!--   <remap from="~input" to="/head_camera_remote_tf_transform_cloud/output" /> -->
+  <!--   <rosparam subst_value="true"> -->
+  <!--     prefix: $(find wrapping_melodic)/save_pcd/ -->
+  <!--     duration: 0.0 -->
+  <!--     binary: false -->
+  <!--     compressed: false -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
 
-  <!-- tape stand -->
-  <include file="$(find wrapping_melodic)/launch/hiro/extract_save_average_pcl.launch">
-    <arg name="average_point_cloud_topic_name" value="/tape_stand/pos" />
-    <arg name="min_max_hsi_topic_name" value="/tape_stand/hsi" />
-    <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_tape_stand/output"/>
-    <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" />
-    <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" />
-    <arg name="identify_name" value="tape_stand" />
-    <arg name="manager"  value="detect_manager" />
-  </include>
+  <!-- <!-\- tape stand -\-> -->
+  <!-- <include file="$(find wrapping_melodic)/launch/hiro/extract_save_average_pcl.launch"> -->
+  <!--   <arg name="average_point_cloud_topic_name" value="/tape_stand/pos" /> -->
+  <!--   <arg name="min_max_hsi_topic_name" value="/tape_stand/hsi" /> -->
+  <!--   <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_tape_stand/output"/> -->
+  <!--   <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" /> -->
+  <!--   <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" /> -->
+  <!--   <arg name="identify_name" value="tape_stand" /> -->
+  <!--   <arg name="manager"  value="detect_manager" /> -->
+  <!-- </include> -->
 
-  <!-- rhand front -->
-  <include file="$(find wrapping_melodic)/launch/hiro/extract_save_average_pcl.launch">
-    <arg name="average_point_cloud_topic_name" value="/rhand_front/pos" />
-    <arg name="min_max_hsi_topic_name" value="/rhand_front/hsi" />
-    <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_rhand_front/output" />
-    <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" />
-    <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" />
-    <arg name="identify_name" value="rhand_front" />
-    <arg name="manager"  value="detect_manager" />
-  </include>
+  <!-- <!-\- rhand front -\-> -->
+  <!-- <include file="$(find wrapping_melodic)/launch/hiro/extract_save_average_pcl.launch"> -->
+  <!--   <arg name="average_point_cloud_topic_name" value="/rhand_front/pos" /> -->
+  <!--   <arg name="min_max_hsi_topic_name" value="/rhand_front/hsi" /> -->
+  <!--   <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_rhand_front/output" /> -->
+  <!--   <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" /> -->
+  <!--   <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" /> -->
+  <!--   <arg name="identify_name" value="rhand_front" /> -->
+  <!--   <arg name="manager"  value="detect_manager" /> -->
+  <!-- </include> -->
 
-  <!-- rhand back -->
-  <include file="$(find wrapping_melodic)/launch/hiro/extract_save_average_pcl.launch">
-    <arg name="average_point_cloud_topic_name" value="/rhand_back/pos" />
-    <arg name="min_max_hsi_topic_name" value="/rhand_back/hsi" />
-    <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_rhand_back/output" />
-    <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" />
-    <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" />
-    <arg name="identify_name" value="rhand_back" />
-    <arg name="manager"  value="detect_manager" />
-  </include>
+  <!-- <!-\- rhand back -\-> -->
+  <!-- <include file="$(find wrapping_melodic)/launch/hiro/extract_save_average_pcl.launch"> -->
+  <!--   <arg name="average_point_cloud_topic_name" value="/rhand_back/pos" /> -->
+  <!--   <arg name="min_max_hsi_topic_name" value="/rhand_back/hsi" /> -->
+  <!--   <arg name="extract_point_cloud_topic_name" value="/bbox_cloud_extract_rhand_back/output" /> -->
+  <!--   <arg name="input_cloud" value="/head_camera_remote/depth_registered/points" /> -->
+  <!--   <arg name="input_image" value="/head_camera_remote/depth/image_rect_raw/compressed" /> -->
+  <!--   <arg name="identify_name" value="rhand_back" /> -->
+  <!--   <arg name="manager"  value="detect_manager" /> -->
+  <!-- </include> -->
 
-  <!-- hsi average pointcloud -->
-  <node name="hsi_extract_cloud_coords_average_paper" type="detect_hsi" pkg="wrapping_melodic" output="screen" >
-    <param name="extract_point_cloud_topic" value="/hsi_color_filter_paper/output"/>
-    <param name="average_coord_topic" value="/hsi_extract_cloud_coords_average_paper/average_coord_topic" />
-    <param name="x_coord_min" type="double" value="0.38" />
-    <param name="x_coord_max" type="double" value="0.52" />
-    <param name="y_coord_min" type="double" value="-0.135" />
-    <param name="y_coord_max" type="double" value="-0.035" />
-    <param name="publish_pcl_topic" value="/hsi_color_filter_paper_extract/points" />
-  </node>
+  <!-- <!-\- hsi average pointcloud -\-> -->
+  <!-- <node name="hsi_extract_cloud_coords_average_paper" type="detect_hsi" pkg="wrapping_melodic" output="screen" > -->
+  <!--   <param name="extract_point_cloud_topic" value="/hsi_color_filter_paper/output"/> -->
+  <!--   <param name="average_coord_topic" value="/hsi_extract_cloud_coords_average_paper/average_coord_topic" /> -->
+  <!--   <param name="x_coord_min" type="double" value="0.38" /> -->
+  <!--   <param name="x_coord_max" type="double" value="0.52" /> -->
+  <!--   <param name="y_coord_min" type="double" value="-0.135" /> -->
+  <!--   <param name="y_coord_max" type="double" value="-0.035" /> -->
+  <!--   <param name="publish_pcl_topic" value="/hsi_color_filter_paper_extract/points" /> -->
+  <!-- </node> -->
 
 </launch>

@@ -86,9 +86,9 @@
         output="screen" >
     <remap from="~input" to="bbox_cloud_extract_$(arg camera_type)/output" />
     <rosparam>
-      max_curvature: 0.01
+      max_curvature: 0.1
       estimate_normal: true
-      min_size: 2000
+      min_size: 100
     </rosparam>
   </node>
 

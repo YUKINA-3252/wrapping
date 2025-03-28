@@ -148,7 +148,8 @@ def natural_keys (text):
 
 
 if __name__ == "__main__":
-    directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/tmp"
+    # directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/tmp"
+    directory_path = "/home/iwata/wrapping_ws/src/wrapping/wrapping/data/syuron_ex_default_1"
 
     if "merge.pcd" in os.listdir(directory_path):
         pass
